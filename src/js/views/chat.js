@@ -6,6 +6,7 @@ import { showToast } from '../components/toast.js';
 import { iconRetry, iconChevronLeft, iconChevronRight } from '../icons.js';
 import { getConfig, getConversation, saveConversation, generateId } from '../store.js';
 import { generateImage } from '../api.js';
+import { renderMarkdown } from '../markdown.js';
 
 function getVariants(msg) {
   if (msg.variants) return msg.variants;
@@ -240,8 +241,8 @@ export function chatView(container, { conversationId, prompt, size, thinking, im
 
             if (variant.text) {
               const textEl = document.createElement('div');
-              textEl.className = 'bubble-ai-text';
-              textEl.textContent = variant.text;
+              textEl.className = 'bubble-ai-text markdown-body';
+              textEl.innerHTML = renderMarkdown(variant.text);
               bubble.appendChild(textEl);
               if (variant.imageBase64) {
                 textEl.style.marginBottom = '10px';
@@ -350,7 +351,7 @@ export function chatView(container, { conversationId, prompt, size, thinking, im
     bubble.appendChild(thinkingBlock);
 
     const textEl = document.createElement('div');
-    textEl.className = 'bubble-ai-text';
+    textEl.className = 'bubble-ai-text markdown-body';
     textEl.style.display = 'none';
     bubble.appendChild(textEl);
 
@@ -371,7 +372,7 @@ export function chatView(container, { conversationId, prompt, size, thinking, im
         }
         if (text) {
           textEl.style.display = '';
-          textEl.textContent = text;
+          textEl.innerHTML = renderMarkdown(text);
           loadingIndicator.style.display = 'none';
         }
         if (imageBase64) {
