@@ -53,6 +53,7 @@
 
 html {
   scroll-behavior: smooth;
+  font-size: 125%;
 }
 
 body {
@@ -319,9 +320,18 @@ h1, h2 {
 }
 
 .message {
-  max-width: 80%;
+  max-width: 65%;
   display: flex;
   flex-direction: column;
+}
+
+.message-ai .image-card {
+  max-width: 220px;
+}
+
+.message-ai .image-card img {
+  max-width: 220px;
+  height: auto;
 }
 
 .message-user {
@@ -522,9 +532,14 @@ h1, h2 {
 
 .gallery-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   gap: 12px;
   padding: 16px 20px;
+}
+
+.gallery-grid .image-card img {
+  max-height: 240px;
+  object-fit: cover;
 }
 
 /* ---- History List ---- */
