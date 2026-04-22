@@ -1,4 +1,5 @@
 import { getConfig, saveConfig } from '../store.js';
+import { renderHeader } from '../components/header.js';
 import { navigate } from '../router.js';
 import { showToast } from '../components/toast.js';
 import { iconGithub } from '../icons.js';
@@ -6,6 +7,14 @@ import { iconGithub } from '../icons.js';
 export function settingsView(container) {
   const existing = getConfig();
 
+  if (!existing) {
+    renderConnectView(container);
+  } else {
+    renderFullSettings(container, existing);
+  }
+}
+
+function renderConnectView(container) {
   const ghLink = document.createElement('a');
   ghLink.href = 'https://github.com/MoYeRanQianZhi/GPT2Image';
   ghLink.target = '_blank';
@@ -26,15 +35,15 @@ export function settingsView(container) {
       <form id="settings-form" style="width:100%;">
         <div class="form-group">
           <label class="form-label" for="base-url">API Base URL</label>
-          <input class="form-input" id="base-url" type="url" value="${existing?.baseURL || 'https://api.openai.com/v1'}" placeholder="https://api.openai.com/v1" required>
+          <input class="form-input" id="base-url" type="url" value="https://api.openai.com/v1" placeholder="https://api.openai.com/v1" required>
         </div>
         <div class="form-group">
           <label class="form-label" for="api-key">API Key</label>
-          <input class="form-input" id="api-key" type="password" value="${existing?.apiKey || ''}" placeholder="sk-..." required>
+          <input class="form-input" id="api-key" type="password" value="" placeholder="sk-..." required>
         </div>
         <div class="form-group">
           <label class="form-label" for="model">Model</label>
-          <input class="form-input" id="model" type="text" value="${existing?.model || 'gpt-5.4'}" placeholder="gpt-5.4">
+          <input class="form-input" id="model" type="text" value="gpt-5.4" placeholder="gpt-5.4">
         </div>
         <button class="btn-primary" type="submit" id="connect-btn">Connect</button>
       </form>
@@ -67,13 +76,115 @@ export function settingsView(container) {
       if (!resp.ok && resp.status !== 404) {
         throw new Error(`HTTP ${resp.status}`);
       }
-      saveConfig({ baseURL, apiKey, model });
+      saveConfig({ baseURL, apiKey, model, showThinking: false });
       showToast('Connected successfully');
       navigate('create');
     } catch (err) {
-      saveConfig({ baseURL, apiKey, model });
+      saveConfig({ baseURL, apiKey, model, showThinking: false });
       showToast('Saved (could not verify connection)', { type: 'error' });
       navigate('create');
     }
   });
+}
+
+function renderFullSettings(container, config) {
+  renderHeader(container, { activeTab: null });
+
+  const wrapper = document.createElement('div');
+  wrapper.className = 'settings-full fade-in';
+
+  const title = document.createElement('h2');
+  title.className = 'settings-full-title';
+  title.textContent = 'Settings';
+  wrapper.appendChild(title);
+
+  // --- Connection Section ---
+  const connSection = document.createElement('div');
+  connSection.className = 'settings-section';
+
+  const connTitle = document.createElement('div');
+  connTitle.className = 'settings-section-title';
+  connTitle.textContent = 'CONNECTION';
+  connSection.appendChild(connTitle);
+
+  connSection.innerHTML += `
+    <div class="form-group">
+      <label class="form-label" for="base-url">API Base URL</label>
+      <input class="form-input" id="base-url" type="url" value="${config.baseURL || ''}" placeholder="https://api.openai.com/v1" required>
+    </div>
+    <div class="form-group">
+      <label class="form-label" for="api-key">API Key</label>
+      <input class="form-input" id="api-key" type="password" value="${config.apiKey || ''}" placeholder="sk-..." required>
+    </div>
+    <div class="form-group">
+      <label class="form-label" for="model">Model</label>
+      <input class="form-input" id="model" type="text" value="${config.model || 'gpt-5.4'}" placeholder="gpt-5.4">
+    </div>
+  `;
+
+  wrapper.appendChild(connSection);
+
+  // --- Preferences Section ---
+  const prefSection = document.createElement('div');
+  prefSection.className = 'settings-section';
+
+  const prefTitle = document.createElement('div');
+  prefTitle.className = 'settings-section-title';
+  prefTitle.textContent = 'PREFERENCES';
+  prefSection.appendChild(prefTitle);
+
+  const thinkingRow = document.createElement('div');
+  thinkingRow.className = 'settings-toggle-row';
+
+  const thinkingLabel = document.createElement('div');
+  thinkingLabel.className = 'settings-toggle-info';
+  thinkingLabel.innerHTML = `
+    <span class="settings-toggle-name">Show thinking process</span>
+    <span class="settings-toggle-desc">Display model reasoning in a collapsible block</span>
+  `;
+
+  const toggleWrap = document.createElement('label');
+  toggleWrap.className = 'toggle-switch';
+  const toggleInput = document.createElement('input');
+  toggleInput.type = 'checkbox';
+  toggleInput.checked = !!config.showThinking;
+  const toggleSlider = document.createElement('span');
+  toggleSlider.className = 'toggle-slider';
+  toggleWrap.appendChild(toggleInput);
+  toggleWrap.appendChild(toggleSlider);
+
+  thinkingRow.appendChild(thinkingLabel);
+  thinkingRow.appendChild(toggleWrap);
+  prefSection.appendChild(thinkingRow);
+
+  wrapper.appendChild(prefSection);
+
+  // --- Save Button ---
+  const saveBtn = document.createElement('button');
+  saveBtn.className = 'btn-primary';
+  saveBtn.textContent = 'Save';
+  saveBtn.style.marginTop = '12px';
+  saveBtn.addEventListener('click', async () => {
+    const baseURL = wrapper.querySelector('#base-url').value.trim();
+    const apiKey = wrapper.querySelector('#api-key').value.trim();
+    const model = wrapper.querySelector('#model').value.trim() || 'gpt-5.4';
+    const showThinking = toggleInput.checked;
+
+    if (!baseURL || !apiKey) {
+      showToast('Please fill in all required fields', { type: 'error' });
+      return;
+    }
+
+    saveConfig({ baseURL, apiKey, model, showThinking });
+    showToast('Settings saved');
+  });
+  wrapper.appendChild(saveBtn);
+
+  // --- GitHub Link ---
+  const ghRow = document.createElement('div');
+  ghRow.className = 'settings-footer';
+  ghRow.innerHTML = `<a href="https://github.com/MoYeRanQianZhi/GPT2Image" target="_blank" rel="noopener noreferrer" class="settings-footer-link">${iconGithub().replace('width="24" height="24"', 'width="16" height="16"')} <span>GitHub</span></a>`;
+  wrapper.appendChild(ghRow);
+
+  container.appendChild(wrapper);
 }

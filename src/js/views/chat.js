@@ -4,7 +4,7 @@ import { renderImageCard } from '../components/image-card.js';
 import { openLightbox } from '../components/lightbox.js';
 import { showToast } from '../components/toast.js';
 import { iconRetry, iconChevronLeft, iconChevronRight } from '../icons.js';
-import { getConversation, saveConversation, generateId } from '../store.js';
+import { getConfig, getConversation, saveConversation, generateId } from '../store.js';
 import { generateImage } from '../api.js';
 
 function getVariants(msg) {
@@ -80,7 +80,7 @@ export function chatView(container, { conversationId, prompt, size, thinking, im
 
       conversation.messages.push({
         role: 'assistant',
-        variants: [{ text: result.text, imageBase64: result.imageBase64, size, timestamp: Date.now() }],
+        variants: [{ text: result.text, imageBase64: result.imageBase64, thinking: result.thinking, size, timestamp: Date.now() }],
         activeVariant: 0,
         timestamp: Date.now(),
       });
@@ -132,7 +132,7 @@ export function chatView(container, { conversationId, prompt, size, thinking, im
       if (msg.error) {
         conversation.messages[msgIdx] = {
           role: 'assistant',
-          variants: [{ text: result.text, imageBase64: result.imageBase64, size, timestamp: Date.now() }],
+          variants: [{ text: result.text, imageBase64: result.imageBase64, thinking: result.thinking, size, timestamp: Date.now() }],
           activeVariant: 0,
           timestamp: Date.now(),
         };
@@ -140,7 +140,7 @@ export function chatView(container, { conversationId, prompt, size, thinking, im
         if (!msg.variants) {
           msg.variants = [{ imageBase64: msg.imageBase64, size: msg.size, timestamp: msg.timestamp }];
         }
-        msg.variants.push({ text: result.text, imageBase64: result.imageBase64, size, timestamp: Date.now() });
+        msg.variants.push({ text: result.text, imageBase64: result.imageBase64, thinking: result.thinking, size, timestamp: Date.now() });
         msg.activeVariant = msg.variants.length - 1;
       }
       saveConversation(conversation);
@@ -188,6 +188,21 @@ export function chatView(container, { conversationId, prompt, size, thinking, im
           if (variant) {
             const bubble = document.createElement('div');
             bubble.className = 'bubble-ai';
+
+            const showThinking = getConfig()?.showThinking;
+            if (showThinking && variant.thinking) {
+              const details = document.createElement('details');
+              details.className = 'thinking-block';
+              const summary = document.createElement('summary');
+              summary.className = 'thinking-summary';
+              summary.textContent = 'Thinking';
+              const content = document.createElement('div');
+              content.className = 'thinking-content';
+              content.textContent = variant.thinking;
+              details.appendChild(summary);
+              details.appendChild(content);
+              bubble.appendChild(details);
+            }
 
             if (variant.text) {
               const textEl = document.createElement('div');

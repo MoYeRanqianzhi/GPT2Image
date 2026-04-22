@@ -22,7 +22,11 @@ export async function generateImage({ prompt, size = '1024x1024', action = 'auto
   };
 
   if (thinking && thinking !== 'none') {
-    payload.reasoning = { effort: thinking };
+    const reasoning = { effort: thinking };
+    if (config.showThinking) {
+      reasoning.generate_summary = 'concise';
+    }
+    payload.reasoning = reasoning;
   }
 
   const response = await fetch(`${config.baseURL.replace(/\/+$/, '')}/responses`, {
@@ -45,8 +49,16 @@ export async function generateImage({ prompt, size = '1024x1024', action = 'auto
 
   let text = null;
   let imageBase64 = null;
+  let thinkingText = null;
 
   for (const item of (data.output || [])) {
+    if (item.type === 'reasoning' && item.summary) {
+      for (const part of item.summary) {
+        if (part.type === 'summary_text' && part.text) {
+          thinkingText = thinkingText ? thinkingText + '\n' + part.text : part.text;
+        }
+      }
+    }
     if (item.type === 'message' && item.content) {
       for (const part of item.content) {
         if (part.type === 'output_text' && part.text) {
@@ -63,5 +75,5 @@ export async function generateImage({ prompt, size = '1024x1024', action = 'auto
     throw new Error('No usable content in API response');
   }
 
-  return { text, imageBase64, raw: data };
+  return { text, imageBase64, thinking: thinkingText, raw: data };
 }
