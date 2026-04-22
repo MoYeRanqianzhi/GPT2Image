@@ -1,4 +1,4 @@
-import { iconSettings, iconNewChat, iconSun, iconMoon } from '../icons.js';
+import { iconSettings, iconNewChat, iconSun, iconMoon, iconMenu, iconClose } from '../icons.js';
 import { navigate } from '../router.js';
 import { isDarkMode, toggleDarkMode } from '../theme.js';
 
@@ -20,43 +20,74 @@ export function renderHeader(container, { activeTab = 'create', showNewChat = fa
   header.innerHTML = `
     <div class="header-logo">
       <img src="assets/icon.png" alt="GPT2IMAGE" class="header-logo-icon">
-      <span style="font-family:var(--font-serif);font-size:15px;font-weight:600;color:var(--text-primary);letter-spacing:0.02em">GPT2IMAGE</span>
+      <span class="header-logo-text">GPT2IMAGE</span>
     </div>
-    <div style="display:flex;align-items:center;gap:8px;">
-      ${showNewChat ? `<button class="tab" data-action="new-chat" style="display:flex;align-items:center;gap:4px;color:var(--text-secondary);background:none;border:1px solid var(--border);border-radius:10px;padding:5px 12px">${iconNewChat().replace('width="24" height="24"', 'width="16" height="16"')} New</button>` : ''}
+    <div class="header-actions">
+      ${showNewChat ? `<button class="header-btn" data-action="new-chat">${iconNewChat().replace('width="24" height="24"', 'width="16" height="16"')} <span class="header-btn-label">New</span></button>` : ''}
       <div class="header-tabs">
         ${tabs.map(t => `<div class="tab${t.id === activeTab ? ' active' : ''}" data-tab="${t.id}">${t.label}</div>`).join('')}
       </div>
-      <button class="tab" data-action="toggle-theme" style="color:var(--text-muted);background:none;border:none;cursor:pointer;padding:4px;display:flex;align-items:center;" title="${dark ? 'Light mode' : 'Dark mode'}">
+      <button class="header-icon-btn" data-action="menu" title="Menu">
+        ${iconMenu().replace('width="24" height="24"', 'width="20" height="20"')}
+      </button>
+      <button class="header-icon-btn" data-action="toggle-theme" title="${dark ? 'Light mode' : 'Dark mode'}">
         ${themeIcon}
       </button>
-      <button class="tab" data-action="settings" style="color:var(--text-muted);background:none;border:none;cursor:pointer;padding:4px;display:flex;align-items:center;">
+      <button class="header-icon-btn" data-action="settings">
         ${iconSettings().replace('width="24" height="24"', 'width="18" height="18"')}
       </button>
     </div>
+    <div class="mobile-menu">
+      ${tabs.map(t => `<div class="mobile-menu-item${t.id === activeTab ? ' active' : ''}" data-tab="${t.id}">${t.label}</div>`).join('')}
+    </div>
   `;
+
+  let menuOpen = false;
+  const menuBtn = header.querySelector('[data-action="menu"]');
+  const mobileMenu = header.querySelector('.mobile-menu');
+
+  function closeMenu() {
+    if (!menuOpen) return;
+    menuOpen = false;
+    mobileMenu.classList.remove('open');
+    menuBtn.innerHTML = iconMenu().replace('width="24" height="24"', 'width="20" height="20"');
+  }
 
   header.addEventListener('click', (e) => {
     const tab = e.target.closest('[data-tab]');
     if (tab) {
       navigate(tab.dataset.tab);
+      closeMenu();
       return;
     }
     const action = e.target.closest('[data-action]');
-    if (action?.dataset.action === 'settings') navigate('settings');
-    if (action?.dataset.action === 'new-chat') navigate('create');
-    if (action?.dataset.action === 'toggle-theme') {
+    if (!action) return;
+
+    if (action.dataset.action === 'settings') { navigate('settings'); closeMenu(); }
+    if (action.dataset.action === 'new-chat') { navigate('create'); closeMenu(); }
+    if (action.dataset.action === 'menu') {
+      e.stopPropagation();
+      menuOpen = !menuOpen;
+      mobileMenu.classList.toggle('open', menuOpen);
+      menuBtn.innerHTML = menuOpen
+        ? iconClose().replace('width="24" height="24"', 'width="20" height="20"')
+        : iconMenu().replace('width="24" height="24"', 'width="20" height="20"');
+    }
+    if (action.dataset.action === 'toggle-theme') {
       const nowDark = !isDarkMode();
       const rect = action.getBoundingClientRect();
       const cx = rect.left + rect.width / 2;
       const cy = rect.top + rect.height / 2;
       toggleDarkMode(nowDark, cx, cy);
-      const btn = action;
-      btn.innerHTML = nowDark
+      action.innerHTML = nowDark
         ? iconSun().replace('width="24" height="24"', 'width="18" height="18"')
         : iconMoon().replace('width="24" height="24"', 'width="18" height="18"');
-      btn.title = nowDark ? 'Light mode' : 'Dark mode';
+      action.title = nowDark ? 'Light mode' : 'Dark mode';
     }
+  });
+
+  document.addEventListener('click', (e) => {
+    if (menuOpen && !header.contains(e.target)) closeMenu();
   });
 
   container.appendChild(header);
