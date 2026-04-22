@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <img src="docs/images/preview.png" alt="Preview" width="720">
+  <a href="README_CN.md">中文文档</a>
 </p>
 
 ## Features
@@ -22,6 +22,12 @@
 - **Gallery & History** — Browse all generated images or revisit past conversations
 - **Fullscreen Lightbox** — View images at full resolution with download support
 - **Zero Backend** — Runs entirely in the browser; data stored in localStorage
+
+## Preview
+
+<p align="center">
+  <img src="docs/images/preview.png" alt="Preview" width="720">
+</p>
 
 ## Quick Start
 
