@@ -1297,6 +1297,15 @@ h1, h2 {
   color: #b53333;
 }
 
+/* ---- Theme Transition Override ---- */
+
+.no-transition,
+.no-transition *,
+.no-transition *::before,
+.no-transition *::after {
+  transition: none !important;
+}
+
 /* ---- Dark Theme ---- */
 
 [data-theme="dark"] {
