@@ -14,7 +14,7 @@ export function renderHeader(container, { activeTab = 'create', showNewChat = fa
   header.innerHTML = `
     <div class="header-logo">
       <img src="assets/icon.png" alt="GPT2IMAGE" class="header-logo-icon">
-      <span style="font-size:15px;font-weight:600;color:var(--text-primary)">GPT2IMAGE</span>
+      <span style="font-family:var(--font-serif);font-size:15px;font-weight:600;color:var(--text-primary);letter-spacing:0.02em">GPT2IMAGE</span>
     </div>
     <div style="display:flex;align-items:center;gap:8px;">
       ${showNewChat ? `<button class="tab" data-action="new-chat" style="display:flex;align-items:center;gap:4px;color:var(--text-secondary)">${iconNewChat().replace('width="24" height="24"', 'width="16" height="16"')} New</button>` : ''}
