@@ -1,16 +1,26 @@
 import { getConfig, saveConfig } from '../store.js';
 import { navigate } from '../router.js';
 import { showToast } from '../components/toast.js';
+import { iconGithub } from '../icons.js';
 
 export function settingsView(container) {
   const existing = getConfig();
+
+  const ghLink = document.createElement('a');
+  ghLink.href = 'https://github.com/MoYeRanQianZhi/GPT2Image';
+  ghLink.target = '_blank';
+  ghLink.rel = 'noopener noreferrer';
+  ghLink.className = 'settings-github';
+  ghLink.innerHTML = iconGithub().replace('width="24" height="24"', 'width="22" height="22"');
+  ghLink.title = 'GitHub';
+  container.appendChild(ghLink);
 
   const view = document.createElement('div');
   view.className = 'view-centered fade-in';
 
   view.innerHTML = `
     <div class="settings-view" style="width:100%;padding:0 20px;">
-      <div class="header-logo-icon" style="width:60px;height:60px;font-size:30px;border-radius:15px;margin-bottom:30px;">G</div>
+      <img src="assets/icon.png" alt="GPT2IMAGE" style="width:60px;height:60px;object-fit:contain;margin-bottom:30px;">
       <h2 class="settings-title">Configure GPT2IMAGE</h2>
       <p class="settings-subtitle">Connect to an OpenAI-compatible API endpoint</p>
       <form id="settings-form" style="width:100%;">

@@ -161,6 +161,19 @@ h1, h2 {
   margin: 0 auto;
 }
 
+.settings-github {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  color: var(--text-muted);
+  transition: color var(--transition-fast);
+  z-index: 10;
+}
+
+.settings-github:hover {
+  color: var(--text-primary);
+}
+
 .settings-title {
   font-family: var(--font-serif);
   font-size: 30px;
