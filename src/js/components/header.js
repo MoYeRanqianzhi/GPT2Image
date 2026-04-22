@@ -1,5 +1,6 @@
-import { iconSettings, iconNewChat } from '../icons.js';
+import { iconSettings, iconNewChat, iconSun, iconMoon } from '../icons.js';
 import { navigate } from '../router.js';
+import { isDarkMode, toggleDarkMode } from '../theme.js';
 
 export function renderHeader(container, { activeTab = 'create', showNewChat = false } = {}) {
   const header = document.createElement('div');
@@ -11,6 +12,11 @@ export function renderHeader(container, { activeTab = 'create', showNewChat = fa
     { id: 'history', label: 'History' },
   ];
 
+  const dark = isDarkMode();
+  const themeIcon = dark
+    ? iconSun().replace('width="24" height="24"', 'width="18" height="18"')
+    : iconMoon().replace('width="24" height="24"', 'width="18" height="18"');
+
   header.innerHTML = `
     <div class="header-logo">
       <img src="assets/icon.png" alt="GPT2IMAGE" class="header-logo-icon">
@@ -21,6 +27,9 @@ export function renderHeader(container, { activeTab = 'create', showNewChat = fa
       <div class="header-tabs">
         ${tabs.map(t => `<div class="tab${t.id === activeTab ? ' active' : ''}" data-tab="${t.id}">${t.label}</div>`).join('')}
       </div>
+      <button class="tab" data-action="toggle-theme" style="color:var(--text-muted);background:none;border:none;cursor:pointer;padding:4px;display:flex;align-items:center;" title="${dark ? 'Light mode' : 'Dark mode'}">
+        ${themeIcon}
+      </button>
       <button class="tab" data-action="settings" style="color:var(--text-muted);background:none;border:none;cursor:pointer;padding:4px;display:flex;align-items:center;">
         ${iconSettings().replace('width="24" height="24"', 'width="18" height="18"')}
       </button>
@@ -36,6 +45,15 @@ export function renderHeader(container, { activeTab = 'create', showNewChat = fa
     const action = e.target.closest('[data-action]');
     if (action?.dataset.action === 'settings') navigate('settings');
     if (action?.dataset.action === 'new-chat') navigate('create');
+    if (action?.dataset.action === 'toggle-theme') {
+      const nowDark = !isDarkMode();
+      toggleDarkMode(nowDark);
+      const btn = action;
+      btn.innerHTML = nowDark
+        ? iconSun().replace('width="24" height="24"', 'width="18" height="18"')
+        : iconMoon().replace('width="24" height="24"', 'width="18" height="18"');
+      btn.title = nowDark ? 'Light mode' : 'Dark mode';
+    }
   });
 
   container.appendChild(header);

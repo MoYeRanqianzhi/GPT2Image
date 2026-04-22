@@ -1,5 +1,6 @@
 import { registerRoute, startRouter, getParams } from './router.js';
 import { initStore, getConfig } from './store.js';
+import { applyTheme } from './theme.js';
 import { settingsView } from './views/settings.js';
 import { landingView } from './views/landing.js';
 import { chatView } from './views/chat.js';
@@ -8,6 +9,7 @@ import { historyView } from './views/history.js';
 
 async function init() {
   await initStore();
+  applyTheme();
 
   registerRoute('settings', (container) => {
     settingsView(container);

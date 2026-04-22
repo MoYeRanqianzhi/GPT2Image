@@ -175,7 +175,7 @@ function renderFullSettings(container, config) {
       return;
     }
 
-    saveConfig({ baseURL, apiKey, model, showThinking, thinkingLevel: config.thinkingLevel || 'low' });
+    saveConfig({ baseURL, apiKey, model, showThinking, thinkingLevel: config.thinkingLevel || 'low', darkMode: config.darkMode ?? false });
     showToast('Settings saved');
   });
   wrapper.appendChild(saveBtn);

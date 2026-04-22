@@ -218,8 +218,7 @@ export function chatView(container, { conversationId, prompt, size, thinking, im
 
         if (msg.error) {
           const bubble = document.createElement('div');
-          bubble.className = 'bubble-ai';
-          bubble.style.color = '#b53333';
+          bubble.className = 'bubble-ai bubble-ai-error';
           bubble.textContent = msg.error;
           el.appendChild(bubble);
         } else {

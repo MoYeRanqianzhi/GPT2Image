@@ -343,7 +343,7 @@ h1, h2 {
 .btn-primary {
   width: 100%;
   background: var(--accent);
-  color: #ffffff;
+  color: var(--bg-primary);
   padding: 15px;
   border-radius: var(--radius-md);
   font-weight: 600;
@@ -649,7 +649,7 @@ h1, h2 {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #ffffff;
+  color: var(--bg-primary);
   cursor: pointer;
   border: none;
   transition: opacity var(--transition-fast);
@@ -1287,8 +1287,46 @@ h1, h2 {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #c4c4d0;
+  background: var(--text-muted);
   border-radius: 4px;
+}
+
+/* ---- Error Color ---- */
+
+.bubble-ai-error {
+  color: #b53333;
+}
+
+/* ---- Dark Theme ---- */
+
+[data-theme="dark"] {
+  --bg-primary: #1a1a1a;
+  --bg-secondary: #242424;
+  --bg-tertiary: #2e2e2e;
+  --bg-hover: #333333;
+  --bg-chat-user: #242424;
+  --bg-chat-ai: #1a1a1a;
+  --border: #3a3a3a;
+  --border-subtle: #2e2e2e;
+  --text-primary: #e8e8e8;
+  --text-secondary: #b0b0b0;
+  --text-tertiary: #808080;
+  --text-muted: #555555;
+  --accent: #e8e8e8;
+}
+
+[data-theme="dark"] .header-logo-icon,
+[data-theme="dark"] .landing-logo,
+[data-theme="dark"] .settings-view img {
+  filter: invert(1);
+}
+
+[data-theme="dark"] .bubble-ai-error {
+  color: #e05555;
+}
+
+[data-theme="dark"] .toggle-slider::before {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
 }
 
 /* ---- Responsive ---- */
