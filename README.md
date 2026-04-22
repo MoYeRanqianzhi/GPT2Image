@@ -26,7 +26,7 @@
 ## Preview
 
 <p align="center">
-  <img src="docs/images/preview.png" alt="Preview" width="720">
+  <img src="docs/images/preview_en.png" alt="Preview" width="720">
 </p>
 
 ## Quick Start
