@@ -6,20 +6,16 @@ export function applyTheme() {
   document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
 }
 
-function setThemeImmediate(theme) {
-  document.documentElement.classList.add('no-transition');
-  document.documentElement.setAttribute('data-theme', theme);
-  document.documentElement.offsetHeight;
-  document.documentElement.classList.remove('no-transition');
-}
-
 export function toggleDarkMode(enabled) {
   const config = getConfig();
   if (config) {
     config.darkMode = enabled;
     saveConfig(config);
   }
-  setThemeImmediate(enabled ? 'dark' : 'light');
+  const root = document.documentElement;
+  root.classList.add('theme-transitioning');
+  root.setAttribute('data-theme', enabled ? 'dark' : 'light');
+  setTimeout(() => root.classList.remove('theme-transitioning'), 450);
 }
 
 export function isDarkMode() {
