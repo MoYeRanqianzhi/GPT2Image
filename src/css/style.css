@@ -239,13 +239,111 @@ h1, h2 {
   cursor: not-allowed;
 }
 
-/* ---- Size Dropdown ---- */
+/* ---- Options Row ---- */
 
-.size-row {
+.options-row {
   display: flex;
   align-items: center;
+  gap: 8px;
   padding: 0 0 10px;
 }
+
+/* ---- Ghost Dropdown (Thinking) ---- */
+
+.ghost-dropdown {
+  position: relative;
+}
+
+.ghost-dropdown-trigger {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--text-tertiary);
+  border-radius: var(--radius-sm);
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.ghost-dropdown-trigger:hover,
+.ghost-dropdown-trigger.open {
+  background: var(--bg-hover);
+  color: var(--text-secondary);
+}
+
+.ghost-dropdown-prefix {
+  margin-right: 2px;
+}
+
+.ghost-dropdown-value {
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.ghost-dropdown-trigger:hover .ghost-dropdown-value,
+.ghost-dropdown-trigger.open .ghost-dropdown-value {
+  color: var(--text-primary);
+}
+
+.ghost-dropdown-arrow {
+  display: flex;
+  align-items: center;
+  transition: transform var(--transition-fast);
+}
+
+.ghost-dropdown-trigger.open .ghost-dropdown-arrow {
+  transform: rotate(180deg);
+}
+
+.ghost-dropdown-menu {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 0;
+  min-width: 120px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  padding: 4px;
+  z-index: 200;
+  opacity: 0;
+  transform: translateY(4px);
+  pointer-events: none;
+  transition: opacity var(--transition-fast), transform var(--transition-fast);
+}
+
+.ghost-dropdown-menu.open {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.ghost-dropdown-item {
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
+  white-space: nowrap;
+}
+
+.ghost-dropdown-item:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.ghost-dropdown-item.active {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+/* ---- Size Dropdown ---- */
 
 .size-dropdown {
   position: relative;
@@ -546,6 +644,14 @@ h1, h2 {
   border-radius: var(--radius-lg);
   padding: 12px;
   border: 1px solid var(--border-subtle);
+}
+
+.bubble-ai-text {
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--text-primary);
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 /* ---- Image Card ---- */

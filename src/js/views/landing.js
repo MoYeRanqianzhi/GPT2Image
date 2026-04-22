@@ -35,8 +35,8 @@ export function landingView(container) {
 
   let inputBarRef = null;
 
-  function handleSend({ prompt, size, images }) {
-    navigate('create', { prompt, size, images, autoSend: true });
+  function handleSend({ prompt, size, thinking, images }) {
+    navigate('create', { prompt, size, thinking, images, autoSend: true });
   }
 
   inputBarRef = renderInputBar(inputWrap, {

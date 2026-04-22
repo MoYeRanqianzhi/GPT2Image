@@ -12,30 +12,85 @@ const SIZE_PRESETS = [
   { value: 'custom', label: 'Custom...' },
 ];
 
+const THINKING_PRESETS = [
+  { value: 'low', label: 'Low' },
+  { value: 'medium', label: 'Medium' },
+  { value: 'high', label: 'High' },
+  { value: 'xhigh', label: 'xHigh' },
+];
+
 export function renderInputBar(container, { placeholder = 'Describe the image you want...', onSend }) {
   let selectedSize = 'auto';
   let selectedLabel = 'Auto';
+  let selectedThinking = 'low';
   let attachedImages = [];
-  let dropdownOpen = false;
+  let sizeDropdownOpen = false;
+  let thinkingDropdownOpen = false;
 
   const wrapper = document.createElement('div');
 
-  // --- Size selector row (right-aligned, above input bar) ---
-  const sizeRow = document.createElement('div');
-  sizeRow.className = 'size-row';
+  // --- Options row (above input bar) ---
+  const optionsRow = document.createElement('div');
+  optionsRow.className = 'options-row';
 
-  const spacer = document.createElement('div');
-  spacer.style.flex = '1';
+  // --- Thinking dropdown (ghost style, left side) ---
+  const thinkingDropdown = document.createElement('div');
+  thinkingDropdown.className = 'ghost-dropdown';
 
-  const dropdown = document.createElement('div');
-  dropdown.className = 'size-dropdown';
+  const thinkingTrigger = document.createElement('button');
+  thinkingTrigger.className = 'ghost-dropdown-trigger';
+  const chevronSmall = iconChevronDown().replace('width="24" height="24"', 'width="12" height="12"');
+  thinkingTrigger.innerHTML = `<span class="ghost-dropdown-prefix">Thinking</span><span class="ghost-dropdown-value">${selectedThinking}</span><span class="ghost-dropdown-arrow">${chevronSmall}</span>`;
 
-  const trigger = document.createElement('button');
-  trigger.className = 'size-dropdown-trigger';
-  trigger.innerHTML = `<span class="size-dropdown-label">${selectedLabel}</span><span class="size-dropdown-arrow">${iconChevronDown().replace('width="24" height="24"', 'width="14" height="14"')}</span>`;
+  const thinkingMenu = document.createElement('div');
+  thinkingMenu.className = 'ghost-dropdown-menu';
 
-  const menu = document.createElement('div');
-  menu.className = 'size-dropdown-menu';
+  for (const preset of THINKING_PRESETS) {
+    const item = document.createElement('div');
+    item.className = 'ghost-dropdown-item' + (preset.value === selectedThinking ? ' active' : '');
+    item.textContent = preset.label;
+    item.dataset.value = preset.value;
+    item.addEventListener('click', (e) => {
+      e.stopPropagation();
+      selectedThinking = preset.value;
+      thinkingTrigger.querySelector('.ghost-dropdown-value').textContent = preset.label;
+      thinkingMenu.querySelectorAll('.ghost-dropdown-item').forEach(el => el.classList.toggle('active', el.dataset.value === preset.value));
+      closeThinkingDropdown();
+    });
+    thinkingMenu.appendChild(item);
+  }
+
+  thinkingDropdown.appendChild(thinkingTrigger);
+  thinkingDropdown.appendChild(thinkingMenu);
+
+  function openThinkingDropdown() {
+    thinkingDropdownOpen = true;
+    thinkingMenu.classList.add('open');
+    thinkingTrigger.classList.add('open');
+  }
+
+  function closeThinkingDropdown() {
+    thinkingDropdownOpen = false;
+    thinkingMenu.classList.remove('open');
+    thinkingTrigger.classList.remove('open');
+  }
+
+  thinkingTrigger.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (sizeDropdownOpen) closeSizeDropdown();
+    thinkingDropdownOpen ? closeThinkingDropdown() : openThinkingDropdown();
+  });
+
+  // --- Size dropdown ---
+  const sizeDropdown = document.createElement('div');
+  sizeDropdown.className = 'size-dropdown';
+
+  const sizeTrigger = document.createElement('button');
+  sizeTrigger.className = 'size-dropdown-trigger';
+  sizeTrigger.innerHTML = `<span class="size-dropdown-label">${selectedLabel}</span><span class="size-dropdown-arrow">${iconChevronDown().replace('width="24" height="24"', 'width="14" height="14"')}</span>`;
+
+  const sizeMenu = document.createElement('div');
+  sizeMenu.className = 'size-dropdown-menu';
 
   for (const preset of SIZE_PRESETS) {
     const item = document.createElement('div');
@@ -53,35 +108,37 @@ export function renderInputBar(container, { placeholder = 'Describe the image yo
         selectedLabel = preset.label;
         customRow.style.display = 'none';
       }
-      trigger.querySelector('.size-dropdown-label').textContent = selectedLabel;
-      menu.querySelectorAll('.size-dropdown-item').forEach(el => el.classList.toggle('active', el.dataset.value === preset.value));
-      closeDropdown();
+      sizeTrigger.querySelector('.size-dropdown-label').textContent = selectedLabel;
+      sizeMenu.querySelectorAll('.size-dropdown-item').forEach(el => el.classList.toggle('active', el.dataset.value === preset.value));
+      closeSizeDropdown();
     });
-    menu.appendChild(item);
+    sizeMenu.appendChild(item);
   }
 
-  dropdown.appendChild(trigger);
-  dropdown.appendChild(menu);
+  sizeDropdown.appendChild(sizeTrigger);
+  sizeDropdown.appendChild(sizeMenu);
 
-  function openDropdown() {
-    dropdownOpen = true;
-    menu.classList.add('open');
-    trigger.classList.add('open');
+  function openSizeDropdown() {
+    sizeDropdownOpen = true;
+    sizeMenu.classList.add('open');
+    sizeTrigger.classList.add('open');
   }
 
-  function closeDropdown() {
-    dropdownOpen = false;
-    menu.classList.remove('open');
-    trigger.classList.remove('open');
+  function closeSizeDropdown() {
+    sizeDropdownOpen = false;
+    sizeMenu.classList.remove('open');
+    sizeTrigger.classList.remove('open');
   }
 
-  trigger.addEventListener('click', (e) => {
+  sizeTrigger.addEventListener('click', (e) => {
     e.stopPropagation();
-    dropdownOpen ? closeDropdown() : openDropdown();
+    if (thinkingDropdownOpen) closeThinkingDropdown();
+    sizeDropdownOpen ? closeSizeDropdown() : openSizeDropdown();
   });
 
   document.addEventListener('click', () => {
-    if (dropdownOpen) closeDropdown();
+    if (sizeDropdownOpen) closeSizeDropdown();
+    if (thinkingDropdownOpen) closeThinkingDropdown();
   });
 
   // Custom size inputs
@@ -127,8 +184,15 @@ export function renderInputBar(container, { placeholder = 'Describe the image yo
     return selectedSize;
   }
 
-  sizeRow.appendChild(spacer);
-  sizeRow.appendChild(dropdown);
+  function getThinking() {
+    return selectedThinking;
+  }
+
+  optionsRow.appendChild(thinkingDropdown);
+  const spacer = document.createElement('div');
+  spacer.style.flex = '1';
+  optionsRow.appendChild(spacer);
+  optionsRow.appendChild(sizeDropdown);
 
   // --- Preview row ---
   const previewRow = document.createElement('div');
@@ -166,7 +230,7 @@ export function renderInputBar(container, { placeholder = 'Describe the image yo
   function doSend() {
     const prompt = textInput.value.trim();
     if (!prompt) return;
-    onSend({ prompt, size: getSize(), images: [...attachedImages] });
+    onSend({ prompt, size: getSize(), thinking: getThinking(), images: [...attachedImages] });
     textInput.value = '';
     attachedImages = [];
     previewRow.innerHTML = '';
@@ -219,11 +283,11 @@ export function renderInputBar(container, { placeholder = 'Describe the image yo
   bar.appendChild(textInput);
   bar.appendChild(sendBtn);
 
-  wrapper.appendChild(sizeRow);
+  wrapper.appendChild(optionsRow);
   wrapper.appendChild(customRow);
   wrapper.appendChild(previewRow);
   wrapper.appendChild(bar);
   container.appendChild(wrapper);
 
-  return { textInput, setImages(imgs) { attachedImages = imgs; } };
+  return { textInput, getThinking, setImages(imgs) { attachedImages = imgs; } };
 }

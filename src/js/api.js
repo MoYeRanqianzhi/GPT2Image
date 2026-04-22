@@ -1,6 +1,6 @@
 import { getConfig } from './store.js';
 
-export async function generateImage({ prompt, size = '1024x1024', action = 'auto', images = [] }) {
+export async function generateImage({ prompt, size = '1024x1024', action = 'auto', images = [], thinking }) {
   const config = getConfig();
   if (!config) throw new Error('Not configured');
 
@@ -21,6 +21,10 @@ export async function generateImage({ prompt, size = '1024x1024', action = 'auto
     tools: [tool]
   };
 
+  if (thinking && thinking !== 'none') {
+    payload.reasoning = { effort: thinking };
+  }
+
   const response = await fetch(`${config.baseURL.replace(/\/+$/, '')}/responses`, {
     method: 'POST',
     headers: {
@@ -39,11 +43,25 @@ export async function generateImage({ prompt, size = '1024x1024', action = 'auto
 
   const data = await response.json();
 
+  let text = null;
+  let imageBase64 = null;
+
   for (const item of (data.output || [])) {
+    if (item.type === 'message' && item.content) {
+      for (const part of item.content) {
+        if (part.type === 'output_text' && part.text) {
+          text = text ? text + '\n' + part.text : part.text;
+        }
+      }
+    }
     if (item.type === 'image_generation_call' && item.result) {
-      return { imageBase64: item.result, raw: data };
+      imageBase64 = item.result;
     }
   }
 
-  throw new Error('No image_generation_call result in API response');
+  if (!text && !imageBase64) {
+    throw new Error('No usable content in API response');
+  }
+
+  return { text, imageBase64, raw: data };
 }

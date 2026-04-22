@@ -19,7 +19,7 @@ function getActiveVariant(msg) {
   return variants[idx] || variants[0] || null;
 }
 
-export function chatView(container, { conversationId, prompt, size, images, autoSend } = {}) {
+export function chatView(container, { conversationId, prompt, size, thinking, images, autoSend } = {}) {
   let conversation = conversationId ? getConversation(conversationId) : null;
   if (!conversation) {
     conversation = {
@@ -39,7 +39,7 @@ export function chatView(container, { conversationId, prompt, size, images, auto
 
   let isGenerating = false;
 
-  const { textInput } = renderInputBar(inputWrap, {
+  const { textInput, getThinking } = renderInputBar(inputWrap, {
     placeholder: 'Continue creating...',
     onSend: handleSend,
   });
@@ -50,10 +50,10 @@ export function chatView(container, { conversationId, prompt, size, images, auto
   renderMessages();
 
   if (autoSend && prompt) {
-    handleSend({ prompt, size: size || 'auto', images: images || [] });
+    handleSend({ prompt, size: size || 'auto', thinking: thinking || 'low', images: images || [] });
   }
 
-  async function handleSend({ prompt, size, images: refImages }) {
+  async function handleSend({ prompt, size, thinking: thinkingLevel, images: refImages }) {
     if (isGenerating) return;
     isGenerating = true;
 
@@ -73,13 +73,14 @@ export function chatView(container, { conversationId, prompt, size, images, auto
       const result = await generateImage({
         prompt,
         size,
+        thinking: thinkingLevel,
         action: refImages?.length ? 'edit' : 'auto',
         images: refImages || [],
       });
 
       conversation.messages.push({
         role: 'assistant',
-        variants: [{ imageBase64: result.imageBase64, size, timestamp: Date.now() }],
+        variants: [{ text: result.text, imageBase64: result.imageBase64, size, timestamp: Date.now() }],
         activeVariant: 0,
         timestamp: Date.now(),
       });
@@ -118,10 +119,12 @@ export function chatView(container, { conversationId, prompt, size, images, auto
     try {
       const refImages = userMsg.imageDataUrl ? [userMsg.imageDataUrl] : [];
       const size = getActiveVariant(msg)?.size || 'auto';
+      const thinkingLevel = getThinking ? getThinking() : 'low';
 
       const result = await generateImage({
         prompt: userMsg.text,
         size,
+        thinking: thinkingLevel,
         action: refImages.length ? 'edit' : 'auto',
         images: refImages,
       });
@@ -129,7 +132,7 @@ export function chatView(container, { conversationId, prompt, size, images, auto
       if (msg.error) {
         conversation.messages[msgIdx] = {
           role: 'assistant',
-          variants: [{ imageBase64: result.imageBase64, size, timestamp: Date.now() }],
+          variants: [{ text: result.text, imageBase64: result.imageBase64, size, timestamp: Date.now() }],
           activeVariant: 0,
           timestamp: Date.now(),
         };
@@ -137,7 +140,7 @@ export function chatView(container, { conversationId, prompt, size, images, auto
         if (!msg.variants) {
           msg.variants = [{ imageBase64: msg.imageBase64, size: msg.size, timestamp: msg.timestamp }];
         }
-        msg.variants.push({ imageBase64: result.imageBase64, size, timestamp: Date.now() });
+        msg.variants.push({ text: result.text, imageBase64: result.imageBase64, size, timestamp: Date.now() });
         msg.activeVariant = msg.variants.length - 1;
       }
       saveConversation(conversation);
@@ -185,18 +188,32 @@ export function chatView(container, { conversationId, prompt, size, images, auto
           if (variant) {
             const bubble = document.createElement('div');
             bubble.className = 'bubble-ai';
-            const card = renderImageCard(variant.imageBase64, {
-              size: variant.size,
-              onEdit: (src) => {
-                textInput.focus();
-                showToast('Reference image attached — describe your edits');
-              },
-              onFullscreen: (src) => {
-                const userMsg = findPrecedingUserMsg(i);
-                openLightbox(src, { prompt: userMsg?.text || '' });
-              },
-            });
-            bubble.appendChild(card);
+
+            if (variant.text) {
+              const textEl = document.createElement('div');
+              textEl.className = 'bubble-ai-text';
+              textEl.textContent = variant.text;
+              bubble.appendChild(textEl);
+              if (variant.imageBase64) {
+                textEl.style.marginBottom = '10px';
+              }
+            }
+
+            if (variant.imageBase64) {
+              const card = renderImageCard(variant.imageBase64, {
+                size: variant.size,
+                onEdit: (src) => {
+                  textInput.focus();
+                  showToast('Reference image attached — describe your edits');
+                },
+                onFullscreen: (src) => {
+                  const userMsg = findPrecedingUserMsg(i);
+                  openLightbox(src, { prompt: userMsg?.text || '' });
+                },
+              });
+              bubble.appendChild(card);
+            }
+
             el.appendChild(bubble);
           }
         }
