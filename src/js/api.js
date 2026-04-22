@@ -28,15 +28,32 @@ function parseResponseOutput(output) {
   return { text, imageBase64, thinking };
 }
 
-export async function generateImage({ prompt, size = '1024x1024', action = 'auto', images = [], thinking, onStream }) {
+export async function generateImage({ prompt, size = '1024x1024', action = 'auto', images = [], thinking, onStream, history = [] }) {
   const config = getConfig();
   if (!config) throw new Error('Not configured');
 
-  const inputContent = [{ type: 'input_text', text: prompt }];
+  const input = [];
 
-  for (const dataUrl of images) {
-    inputContent.push({ type: 'input_image', image_url: dataUrl });
+  for (const msg of history) {
+    if (msg.role === 'user') {
+      const content = [{ type: 'input_text', text: msg.text }];
+      if (msg.imageDataUrl) {
+        content.push({ type: 'input_image', image_url: msg.imageDataUrl });
+      }
+      input.push({ role: 'user', content });
+    } else if (msg.role === 'assistant' && !msg.error) {
+      const variant = msg.variants?.[msg.activeVariant || 0] || msg.variants?.[0];
+      if (variant?.text) {
+        input.push({ role: 'assistant', content: [{ type: 'output_text', text: variant.text }] });
+      }
+    }
   }
+
+  const currentContent = [{ type: 'input_text', text: prompt }];
+  for (const dataUrl of images) {
+    currentContent.push({ type: 'input_image', image_url: dataUrl });
+  }
+  input.push({ role: 'user', content: currentContent });
 
   const tool = { type: 'image_generation', action };
   if (size && size !== 'auto') {
@@ -45,7 +62,7 @@ export async function generateImage({ prompt, size = '1024x1024', action = 'auto
 
   const payload = {
     model: config.model || 'gpt-5.4',
-    input: [{ role: 'user', content: inputContent }],
+    input,
     tools: [tool]
   };
 

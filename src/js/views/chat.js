@@ -77,12 +77,14 @@ export function chatView(container, { conversationId, prompt, size, thinking, im
     scrollToBottom();
 
     try {
+      const historyMessages = conversation.messages.slice(0, -1);
       const result = await generateImage({
         prompt,
         size,
         thinking: thinkingLevel,
         action: refImages?.length ? 'edit' : 'auto',
         images: refImages || [],
+        history: historyMessages,
         onStream: (delta) => {
           streamBubble.update(delta);
           if (isNearBottom()) scrollToBottom();
@@ -141,12 +143,14 @@ export function chatView(container, { conversationId, prompt, size, thinking, im
       const retrySize = getActiveVariant(msg)?.size || 'auto';
       const thinkingLevel = getThinking ? getThinking() : 'low';
 
+      const historyMessages = conversation.messages.slice(0, msgIdx);
       const result = await generateImage({
         prompt: userMsg.text,
         size: retrySize,
         thinking: thinkingLevel,
         action: refImages.length ? 'edit' : 'auto',
         images: refImages,
+        history: historyMessages,
         onStream: (delta) => {
           streamBubble.update(delta);
           if (isNearBottom()) scrollToBottom();
