@@ -1,4 +1,5 @@
 data/
 screenshots/
 .superpowers/
+.playwright-mcp/
 node_modules/
