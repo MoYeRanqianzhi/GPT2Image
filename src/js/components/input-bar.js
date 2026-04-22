@@ -257,29 +257,46 @@ export function renderInputBar(container, { placeholder = 'Describe the image yo
   });
 
   sendBtn.addEventListener('click', doSend);
+
+  function addImageFile(file) {
+    if (!file.type.startsWith('image/')) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      attachedImages.push(reader.result);
+      const thumb = document.createElement('div');
+      thumb.style.cssText = 'width:40px;height:40px;border-radius:6px;overflow:hidden;position:relative;cursor:pointer;';
+      thumb.innerHTML = `<img src="${reader.result}" style="width:100%;height:100%;object-fit:cover;">`;
+      thumb.title = 'Click to remove';
+      thumb.addEventListener('click', () => {
+        const idx = attachedImages.indexOf(reader.result);
+        if (idx >= 0) attachedImages.splice(idx, 1);
+        thumb.remove();
+        if (!attachedImages.length) previewRow.style.display = 'none';
+      });
+      previewRow.appendChild(thumb);
+      previewRow.style.display = 'flex';
+    };
+    reader.readAsDataURL(file);
+  }
+
   attachBtn.addEventListener('click', () => fileInput.click());
 
   fileInput.addEventListener('change', () => {
     for (const file of fileInput.files) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        attachedImages.push(reader.result);
-        const thumb = document.createElement('div');
-        thumb.style.cssText = 'width:40px;height:40px;border-radius:6px;overflow:hidden;position:relative;cursor:pointer;';
-        thumb.innerHTML = `<img src="${reader.result}" style="width:100%;height:100%;object-fit:cover;">`;
-        thumb.title = 'Click to remove';
-        thumb.addEventListener('click', () => {
-          const idx = attachedImages.indexOf(reader.result);
-          if (idx >= 0) attachedImages.splice(idx, 1);
-          thumb.remove();
-          if (!attachedImages.length) previewRow.style.display = 'none';
-        });
-        previewRow.appendChild(thumb);
-        previewRow.style.display = 'flex';
-      };
-      reader.readAsDataURL(file);
+      addImageFile(file);
     }
     fileInput.value = '';
+  });
+
+  textInput.addEventListener('paste', (e) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+    for (const item of items) {
+      if (item.type.startsWith('image/')) {
+        e.preventDefault();
+        addImageFile(item.getAsFile());
+      }
+    }
   });
 
   bar.appendChild(attachBtn);
