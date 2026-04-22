@@ -13,7 +13,7 @@ export function renderHeader(container, { activeTab = 'create', showNewChat = fa
 
   header.innerHTML = `
     <div class="header-logo">
-      <div class="header-logo-icon">G</div>
+      <img src="assets/icon.png" alt="GPT2IMAGE" class="header-logo-icon">
       <span style="font-size:15px;font-weight:600;color:var(--text-primary)">GPT2IMAGE</span>
     </div>
     <div style="display:flex;align-items:center;gap:8px;">

@@ -17,6 +17,11 @@ export function landingView(container) {
   const main = document.createElement('div');
   main.className = 'landing fade-in';
 
+  const logoImg = document.createElement('img');
+  logoImg.src = 'assets/logo.png';
+  logoImg.alt = 'GPT2IMAGE';
+  logoImg.className = 'landing-logo';
+
   const title = document.createElement('h1');
   title.className = 'landing-title';
   title.textContent = 'What would you like to create?';
@@ -54,6 +59,7 @@ export function landingView(container) {
     chips.appendChild(chip);
   }
 
+  main.appendChild(logoImg);
   main.appendChild(title);
   main.appendChild(subtitle);
   main.appendChild(inputWrap);

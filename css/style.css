@@ -120,14 +120,7 @@ h1, h2 {
 .header-logo-icon {
   width: 34px;
   height: 34px;
-  background: #1a1a1a;
-  border-radius: var(--radius-sm);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  color: #ffffff;
-  font-size: 17px;
+  object-fit: contain;
 }
 
 .header-tabs {
@@ -631,6 +624,11 @@ h1, h2 {
   justify-content: center;
   gap: 20px;
   padding: 0 24px;
+}
+
+.landing-logo {
+  height: 60px;
+  object-fit: contain;
 }
 
 .landing-title {
