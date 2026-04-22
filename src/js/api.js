@@ -1,5 +1,18 @@
 import { getConfig } from './store.js';
 
+let cachedSystemPrompt = null;
+
+async function getSystemPrompt() {
+  if (cachedSystemPrompt !== null) return cachedSystemPrompt;
+  try {
+    const resp = await fetch('assets/system-prompt.md');
+    cachedSystemPrompt = resp.ok ? await resp.text() : '';
+  } catch {
+    cachedSystemPrompt = '';
+  }
+  return cachedSystemPrompt;
+}
+
 function parseResponseOutput(output) {
   let text = null;
   let imageBase64 = null;
@@ -60,10 +73,13 @@ export async function generateImage({ prompt, size = '1024x1024', action = 'auto
     tool.size = size;
   }
 
+  const instructions = await getSystemPrompt();
+
   const payload = {
     model: config.model || 'gpt-5.4',
     input,
-    tools: [tool]
+    tools: [tool],
+    ...(instructions && { instructions }),
   };
 
   if (thinking && thinking !== 'none') {
