@@ -24,7 +24,7 @@ Gateway API (user-configured baseURL + /responses)
 ### 1. Settings Page (first visit / no config)
 
 Full-screen centered form on black background:
-- baseURL input (pre-filled with `https://cpa.mynav.website/v1`)
+- baseURL input (pre-filled with `https://api.openai.com/v1`)
 - API Key input (password field)
 - Model name input (default: `gpt-5.4`)
 - "Connect" button — validates by sending a lightweight request
