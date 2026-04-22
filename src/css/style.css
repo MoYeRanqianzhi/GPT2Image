@@ -33,7 +33,7 @@
   --radius-xl: 24px;
 
   /* Typography */
-  --font-serif: Georgia, 'Times New Roman', serif;
+  --font-serif: 'Libre Baskerville', 'Noto Serif SC', 'Source Han Serif SC', Georgia, serif;
   --font-sans: system-ui, -apple-system, 'Segoe UI', sans-serif;
 
   /* Transitions */
@@ -750,6 +750,7 @@ h1, h2 {
 
 .message-ai {
   align-self: flex-start;
+  max-width: 85%;
 }
 
 .bubble-user {
@@ -773,6 +774,8 @@ h1, h2 {
   line-height: 1.7;
   color: var(--text-primary);
   word-break: break-word;
+  font-family: var(--font-serif);
+  letter-spacing: 0.01em;
 }
 
 /* ---- Markdown Body ---- */
