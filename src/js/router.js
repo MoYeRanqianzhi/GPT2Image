@@ -34,7 +34,8 @@ export function startRouter(container) {
     }
     if (handler) {
       container.innerHTML = '';
-      currentCleanup = handler(container) || null;
+      const result = handler(container);
+      currentCleanup = typeof result === 'function' ? result : null;
     }
   };
 

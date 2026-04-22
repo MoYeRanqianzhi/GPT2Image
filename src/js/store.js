@@ -1,5 +1,56 @@
 const CONFIG_KEY = 'gpt2image_config';
-const CONVERSATIONS_KEY = 'gpt2image_conversations';
+const DB_NAME = 'gpt2image';
+const DB_VERSION = 1;
+const CONV_STORE = 'conversations';
+const LEGACY_KEY = 'gpt2image_conversations';
+
+let db = null;
+
+function openDB() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB_NAME, DB_VERSION);
+    request.onupgradeneeded = (e) => {
+      const database = e.target.result;
+      if (!database.objectStoreNames.contains(CONV_STORE)) {
+        database.createObjectStore(CONV_STORE, { keyPath: 'id' });
+      }
+    };
+    request.onsuccess = () => {
+      db = request.result;
+      resolve(db);
+    };
+    request.onerror = () => reject(request.error);
+  });
+}
+
+async function migrateFromLocalStorage() {
+  const raw = localStorage.getItem(LEGACY_KEY);
+  if (!raw) return;
+  try {
+    const convs = JSON.parse(raw);
+    if (!Array.isArray(convs) || convs.length === 0) {
+      localStorage.removeItem(LEGACY_KEY);
+      return;
+    }
+    const tx = db.transaction(CONV_STORE, 'readwrite');
+    const store = tx.objectStore(CONV_STORE);
+    for (const conv of convs) {
+      store.put(conv);
+    }
+    await new Promise((resolve, reject) => {
+      tx.oncomplete = resolve;
+      tx.onerror = () => reject(tx.error);
+    });
+    localStorage.removeItem(LEGACY_KEY);
+  } catch (e) {
+    console.warn('Migration from localStorage failed:', e);
+  }
+}
+
+export async function initStore() {
+  await openDB();
+  await migrateFromLocalStorage();
+}
 
 export function getConfig() {
   const raw = localStorage.getItem(CONFIG_KEY);
@@ -10,32 +61,50 @@ export function saveConfig(config) {
   localStorage.setItem(CONFIG_KEY, JSON.stringify(config));
 }
 
-export function getConversations() {
-  const raw = localStorage.getItem(CONVERSATIONS_KEY);
-  const convs = raw ? JSON.parse(raw) : [];
-  return convs.sort((a, b) => b.createdAt - a.createdAt);
+export async function getConversations() {
+  const tx = db.transaction(CONV_STORE, 'readonly');
+  const store = tx.objectStore(CONV_STORE);
+  const request = store.getAll();
+  return new Promise((resolve, reject) => {
+    request.onsuccess = () => resolve(request.result.sort((a, b) => b.createdAt - a.createdAt));
+    request.onerror = () => reject(request.error);
+  });
 }
 
-export function getConversation(id) {
-  return getConversations().find(c => c.id === id) || null;
+export async function getConversation(id) {
+  const tx = db.transaction(CONV_STORE, 'readonly');
+  const store = tx.objectStore(CONV_STORE);
+  const request = store.get(id);
+  return new Promise((resolve, reject) => {
+    request.onsuccess = () => resolve(request.result || null);
+    request.onerror = () => reject(request.error);
+  });
 }
 
-export function saveConversation(conversation) {
-  const convs = getConversations();
-  const idx = convs.findIndex(c => c.id === conversation.id);
-  if (idx >= 0) convs[idx] = conversation;
-  else convs.push(conversation);
-  localStorage.setItem(CONVERSATIONS_KEY, JSON.stringify(convs));
+export async function saveConversation(conversation) {
+  const tx = db.transaction(CONV_STORE, 'readwrite');
+  const store = tx.objectStore(CONV_STORE);
+  store.put(conversation);
+  return new Promise((resolve, reject) => {
+    tx.oncomplete = resolve;
+    tx.onerror = () => reject(tx.error);
+  });
 }
 
-export function deleteConversation(id) {
-  const convs = getConversations().filter(c => c.id !== id);
-  localStorage.setItem(CONVERSATIONS_KEY, JSON.stringify(convs));
+export async function deleteConversation(id) {
+  const tx = db.transaction(CONV_STORE, 'readwrite');
+  const store = tx.objectStore(CONV_STORE);
+  store.delete(id);
+  return new Promise((resolve, reject) => {
+    tx.oncomplete = resolve;
+    tx.onerror = () => reject(tx.error);
+  });
 }
 
-export function getAllImages() {
+export async function getAllImages() {
+  const convs = await getConversations();
   const images = [];
-  for (const conv of getConversations()) {
+  for (const conv of convs) {
     for (let i = 0; i < conv.messages.length; i++) {
       const msg = conv.messages[i];
       if (msg.role !== 'assistant') continue;

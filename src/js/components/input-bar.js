@@ -19,10 +19,10 @@ const THINKING_PRESETS = [
   { value: 'xhigh', label: 'xHigh' },
 ];
 
-export function renderInputBar(container, { placeholder = 'Describe the image you want...', onSend }) {
+export function renderInputBar(container, { placeholder = 'Describe the image you want...', onSend, initialThinking = 'low' }) {
   let selectedSize = 'auto';
   let selectedLabel = 'Auto';
-  let selectedThinking = 'low';
+  let selectedThinking = initialThinking;
   let attachedImages = [];
   let sizeDropdownOpen = false;
   let thinkingDropdownOpen = false;
@@ -40,7 +40,8 @@ export function renderInputBar(container, { placeholder = 'Describe the image yo
   const thinkingTrigger = document.createElement('button');
   thinkingTrigger.className = 'ghost-dropdown-trigger';
   const chevronSmall = iconChevronDown().replace('width="24" height="24"', 'width="12" height="12"');
-  thinkingTrigger.innerHTML = `<span class="ghost-dropdown-prefix">Thinking</span><span class="ghost-dropdown-value">${selectedThinking}</span><span class="ghost-dropdown-arrow">${chevronSmall}</span>`;
+  const initialThinkingLabel = THINKING_PRESETS.find(p => p.value === selectedThinking)?.label || 'Low';
+  thinkingTrigger.innerHTML = `<span class="ghost-dropdown-prefix">Thinking</span><span class="ghost-dropdown-value">${initialThinkingLabel}</span><span class="ghost-dropdown-arrow">${chevronSmall}</span>`;
 
   const thinkingMenu = document.createElement('div');
   thinkingMenu.className = 'ghost-dropdown-menu';

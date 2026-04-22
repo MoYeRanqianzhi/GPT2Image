@@ -65,28 +65,30 @@ export function landingView(container) {
   main.appendChild(inputWrap);
   main.appendChild(chips);
 
-  const recentImages = getAllImages().slice(0, 6);
-  if (recentImages.length) {
-    const recentRow = document.createElement('div');
-    recentRow.className = 'recent-row';
-    const label = document.createElement('div');
-    label.className = 'recent-label';
-    label.textContent = 'Recent creations';
-    const grid = document.createElement('div');
-    grid.className = 'recent-grid';
-    for (const img of recentImages) {
-      const thumb = document.createElement('div');
-      thumb.className = 'recent-thumb';
-      thumb.innerHTML = `<img src="data:image/png;base64,${img.imageBase64}" alt="${img.prompt}">`;
-      thumb.addEventListener('click', () => {
-        openLightbox(`data:image/png;base64,${img.imageBase64}`, { prompt: img.prompt });
-      });
-      grid.appendChild(thumb);
-    }
-    recentRow.appendChild(label);
-    recentRow.appendChild(grid);
-    main.appendChild(recentRow);
-  }
-
   container.appendChild(main);
+
+  getAllImages().then(allImages => {
+    const recentImages = allImages.slice(0, 6);
+    if (recentImages.length) {
+      const recentRow = document.createElement('div');
+      recentRow.className = 'recent-row';
+      const label = document.createElement('div');
+      label.className = 'recent-label';
+      label.textContent = 'Recent creations';
+      const grid = document.createElement('div');
+      grid.className = 'recent-grid';
+      for (const img of recentImages) {
+        const thumb = document.createElement('div');
+        thumb.className = 'recent-thumb';
+        thumb.innerHTML = `<img src="data:image/png;base64,${img.imageBase64}" alt="${img.prompt}">`;
+        thumb.addEventListener('click', () => {
+          openLightbox(`data:image/png;base64,${img.imageBase64}`, { prompt: img.prompt });
+        });
+        grid.appendChild(thumb);
+      }
+      recentRow.appendChild(label);
+      recentRow.appendChild(grid);
+      main.appendChild(recentRow);
+    }
+  });
 }

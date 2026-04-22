@@ -20,14 +20,7 @@ function getActiveVariant(msg) {
 }
 
 export function chatView(container, { conversationId, prompt, size, thinking, images, autoSend } = {}) {
-  let conversation = conversationId ? getConversation(conversationId) : null;
-  if (!conversation) {
-    conversation = {
-      id: generateId(),
-      createdAt: Date.now(),
-      messages: [],
-    };
-  }
+  let conversation = null;
 
   renderHeader(container, { activeTab: 'create', showNewChat: true });
 
@@ -42,19 +35,29 @@ export function chatView(container, { conversationId, prompt, size, thinking, im
   const { textInput, getThinking } = renderInputBar(inputWrap, {
     placeholder: 'Continue creating...',
     onSend: handleSend,
+    initialThinking: thinking || 'low',
   });
 
   container.appendChild(messagesEl);
   container.appendChild(inputWrap);
 
-  renderMessages();
-
-  if (autoSend && prompt) {
-    handleSend({ prompt, size: size || 'auto', thinking: thinking || 'low', images: images || [] });
-  }
+  (async () => {
+    conversation = conversationId ? await getConversation(conversationId) : null;
+    if (!conversation) {
+      conversation = {
+        id: generateId(),
+        createdAt: Date.now(),
+        messages: [],
+      };
+    }
+    renderMessages();
+    if (autoSend && prompt) {
+      handleSend({ prompt, size: size || 'auto', thinking: thinking || 'low', images: images || [] });
+    }
+  })();
 
   async function handleSend({ prompt, size, thinking: thinkingLevel, images: refImages }) {
-    if (isGenerating) return;
+    if (isGenerating || !conversation) return;
     isGenerating = true;
 
     conversation.messages.push({
@@ -63,7 +66,7 @@ export function chatView(container, { conversationId, prompt, size, thinking, im
       imageDataUrl: refImages?.length ? refImages[0] : undefined,
       timestamp: Date.now(),
     });
-    saveConversation(conversation);
+    await saveConversation(conversation);
     renderMessages();
     scrollToBottom();
 
@@ -84,7 +87,7 @@ export function chatView(container, { conversationId, prompt, size, thinking, im
         activeVariant: 0,
         timestamp: Date.now(),
       });
-      saveConversation(conversation);
+      await saveConversation(conversation);
     } catch (err) {
       showToast(err.message || 'Generation failed', { type: 'error' });
       conversation.messages.push({
@@ -92,7 +95,7 @@ export function chatView(container, { conversationId, prompt, size, thinking, im
         error: err.message,
         timestamp: Date.now(),
       });
-      saveConversation(conversation);
+      await saveConversation(conversation);
     } finally {
       loadingEl.remove();
       isGenerating = false;
@@ -102,7 +105,7 @@ export function chatView(container, { conversationId, prompt, size, thinking, im
   }
 
   async function handleRetry(msgIdx) {
-    if (isGenerating) return;
+    if (isGenerating || !conversation) return;
     const msg = conversation.messages[msgIdx];
 
     let userMsg = null;
@@ -143,7 +146,7 @@ export function chatView(container, { conversationId, prompt, size, thinking, im
         msg.variants.push({ text: result.text, imageBase64: result.imageBase64, thinking: result.thinking, size, timestamp: Date.now() });
         msg.activeVariant = msg.variants.length - 1;
       }
-      saveConversation(conversation);
+      await saveConversation(conversation);
     } catch (err) {
       showToast(err.message || 'Retry failed', { type: 'error' });
     } finally {
@@ -245,10 +248,10 @@ export function chatView(container, { conversationId, prompt, size, thinking, im
           prevBtn.className = 'variant-nav-btn';
           prevBtn.innerHTML = iconChevronLeft().replace('width="24" height="24"', 'width="14" height="14"');
           prevBtn.disabled = (msg.activeVariant || 0) === 0;
-          prevBtn.addEventListener('click', () => {
+          prevBtn.addEventListener('click', async () => {
             if ((msg.activeVariant || 0) > 0) {
               msg.activeVariant--;
-              saveConversation(conversation);
+              await saveConversation(conversation);
               renderMessages();
             }
           });
@@ -260,10 +263,10 @@ export function chatView(container, { conversationId, prompt, size, thinking, im
           nextBtn.className = 'variant-nav-btn';
           nextBtn.innerHTML = iconChevronRight().replace('width="24" height="24"', 'width="14" height="14"');
           nextBtn.disabled = (msg.activeVariant || 0) >= variants.length - 1;
-          nextBtn.addEventListener('click', () => {
+          nextBtn.addEventListener('click', async () => {
             if ((msg.activeVariant || 0) < variants.length - 1) {
               msg.activeVariant++;
-              saveConversation(conversation);
+              await saveConversation(conversation);
               renderMessages();
             }
           });
