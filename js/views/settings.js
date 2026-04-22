@@ -10,7 +10,7 @@ export function settingsView(container) {
 
   view.innerHTML = `
     <div class="settings-view" style="width:100%;padding:0 20px;">
-      <div class="header-logo-icon" style="width:48px;height:48px;font-size:24px;border-radius:12px;margin-bottom:24px;">G</div>
+      <div class="header-logo-icon" style="width:60px;height:60px;font-size:30px;border-radius:15px;margin-bottom:30px;">G</div>
       <h2 class="settings-title">Configure GPT2IMAGE</h2>
       <p class="settings-subtitle">Connect to an OpenAI-compatible API endpoint</p>
       <form id="settings-form" style="width:100%;">
