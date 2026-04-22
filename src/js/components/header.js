@@ -17,7 +17,7 @@ export function renderHeader(container, { activeTab = 'create', showNewChat = fa
       <span style="font-family:var(--font-serif);font-size:15px;font-weight:600;color:var(--text-primary);letter-spacing:0.02em">GPT2IMAGE</span>
     </div>
     <div style="display:flex;align-items:center;gap:8px;">
-      ${showNewChat ? `<button class="tab" data-action="new-chat" style="display:flex;align-items:center;gap:4px;color:var(--text-secondary);background:none;border:none">${iconNewChat().replace('width="24" height="24"', 'width="16" height="16"')} New</button>` : ''}
+      ${showNewChat ? `<button class="tab" data-action="new-chat" style="display:flex;align-items:center;gap:4px;color:var(--text-secondary);background:none;border:1px solid var(--border);border-radius:10px;padding:5px 12px">${iconNewChat().replace('width="24" height="24"', 'width="16" height="16"')} New</button>` : ''}
       <div class="header-tabs">
         ${tabs.map(t => `<div class="tab${t.id === activeTab ? ' active' : ''}" data-tab="${t.id}">${t.label}</div>`).join('')}
       </div>
