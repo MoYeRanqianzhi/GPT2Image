@@ -1,29 +1,29 @@
 /* ============================================
    GPT2IMAGE — Design Tokens & Stylesheet
-   GPT-style black/white with Claude elegance
+   Clean light theme with Claude elegance
    ============================================ */
 
 :root {
   /* Backgrounds */
-  --bg-primary: #0d0d0d;
-  --bg-secondary: #141414;
-  --bg-tertiary: #1a1a1a;
-  --bg-hover: #1e1e1e;
-  --bg-chat-user: #1e1e1e;
-  --bg-chat-ai: #141414;
+  --bg-primary: #ffffff;
+  --bg-secondary: #f7f7f8;
+  --bg-tertiary: #ececf1;
+  --bg-hover: #f0f0f3;
+  --bg-chat-user: #f7f7f8;
+  --bg-chat-ai: #ffffff;
 
   /* Borders */
-  --border: #2a2a2a;
-  --border-subtle: #1e1e1e;
+  --border: #d9d9e3;
+  --border-subtle: #e8e8ed;
 
   /* Text */
-  --text-primary: #ffffff;
-  --text-secondary: #aaaaaa;
-  --text-tertiary: #666666;
-  --text-muted: #444444;
+  --text-primary: #1a1a1a;
+  --text-secondary: #555568;
+  --text-tertiary: #8e8ea0;
+  --text-muted: #b4b4c4;
 
   /* Accent */
-  --accent: #ffffff;
+  --accent: #1a1a1a;
 
   /* Radii */
   --radius-sm: 6px;
@@ -118,13 +118,13 @@ h1, h2 {
 .header-logo-icon {
   width: 28px;
   height: 28px;
-  background: #ffffff;
+  background: #1a1a1a;
   border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 700;
-  color: #0d0d0d;
+  color: #ffffff;
   font-size: 14px;
 }
 
@@ -205,13 +205,13 @@ h1, h2 {
 }
 
 .form-input:focus {
-  border-color: #555;
+  border-color: #8e8ea0;
 }
 
 .btn-primary {
   width: 100%;
   background: var(--accent);
-  color: #0d0d0d;
+  color: #ffffff;
   padding: 12px;
   border-radius: var(--radius-md);
   font-weight: 600;
@@ -262,7 +262,7 @@ h1, h2 {
 .input-bar-attach {
   width: 28px;
   height: 28px;
-  border: 1px dashed #444;
+  border: 1px dashed #c4c4d0;
   border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
@@ -274,8 +274,8 @@ h1, h2 {
 }
 
 .input-bar-attach:hover {
-  border-color: #666;
-  color: var(--text-tertiary);
+  border-color: #8e8ea0;
+  color: var(--text-secondary);
 }
 
 .input-bar-send {
@@ -286,7 +286,7 @@ h1, h2 {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #0d0d0d;
+  color: #ffffff;
   cursor: pointer;
   border: none;
   transition: opacity var(--transition-fast);
@@ -337,7 +337,8 @@ h1, h2 {
   border-radius: 14px 14px 4px 14px;
   padding: 10px 14px;
   font-size: 14px;
-  color: #d0d0d0;
+  color: var(--text-primary);
+  border: 1px solid var(--border-subtle);
 }
 
 .bubble-ai {
@@ -602,8 +603,8 @@ h1, h2 {
 }
 
 .history-delete:hover {
-  background: rgba(255, 255, 255, 0.05);
-  color: var(--text-tertiary);
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--text-secondary);
 }
 
 /* ---- Lightbox ---- */
@@ -693,7 +694,7 @@ h1, h2 {
   display: inline-block;
   width: 8px;
   height: 8px;
-  background: #555;
+  background: #8e8ea0;
   border-radius: 50%;
   animation: pulse 1.2s infinite;
 }
@@ -731,7 +732,7 @@ h1, h2 {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #333;
+  background: #c4c4d0;
   border-radius: 3px;
 }
 
