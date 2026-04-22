@@ -656,7 +656,9 @@ h1, h2 {
 }
 
 .input-bar-send:disabled {
-  opacity: 0.2;
+  background: var(--bg-tertiary);
+  color: var(--text-muted);
+  cursor: default;
 }
 
 /* ---- Message Actions ---- */
