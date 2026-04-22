@@ -1,4 +1,5 @@
 import { iconPlus, iconSend, iconChevronDown } from '../icons.js';
+import { getConfig, saveConfig } from '../store.js';
 
 const SIZE_PRESETS = [
   { value: 'auto', label: 'Auto' },
@@ -22,7 +23,7 @@ const THINKING_PRESETS = [
 export function renderInputBar(container, { placeholder = 'Describe the image you want...', onSend, initialThinking = 'low' }) {
   let selectedSize = 'auto';
   let selectedLabel = 'Auto';
-  let selectedThinking = initialThinking;
+  let selectedThinking = getConfig()?.thinkingLevel || initialThinking;
   let attachedImages = [];
   let sizeDropdownOpen = false;
   let thinkingDropdownOpen = false;
@@ -54,6 +55,8 @@ export function renderInputBar(container, { placeholder = 'Describe the image yo
     item.addEventListener('click', (e) => {
       e.stopPropagation();
       selectedThinking = preset.value;
+      const cfg = getConfig();
+      if (cfg) { cfg.thinkingLevel = preset.value; saveConfig(cfg); }
       thinkingTrigger.querySelector('.ghost-dropdown-value').textContent = preset.label;
       thinkingMenu.querySelectorAll('.ghost-dropdown-item').forEach(el => el.classList.toggle('active', el.dataset.value === preset.value));
       closeThinkingDropdown();

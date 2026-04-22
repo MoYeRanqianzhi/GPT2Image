@@ -1,6 +1,34 @@
 import { getConfig } from './store.js';
 
-export async function generateImage({ prompt, size = '1024x1024', action = 'auto', images = [], thinking }) {
+function parseResponseOutput(output) {
+  let text = null;
+  let imageBase64 = null;
+  let thinking = null;
+
+  for (const item of (output || [])) {
+    if (item.type === 'reasoning' && item.summary) {
+      for (const part of item.summary) {
+        if (part.type === 'summary_text' && part.text) {
+          thinking = thinking ? thinking + '\n' + part.text : part.text;
+        }
+      }
+    }
+    if (item.type === 'message' && item.content) {
+      for (const part of item.content) {
+        if (part.type === 'output_text' && part.text) {
+          text = text ? text + '\n' + part.text : part.text;
+        }
+      }
+    }
+    if (item.type === 'image_generation_call' && item.result) {
+      imageBase64 = item.result;
+    }
+  }
+
+  return { text, imageBase64, thinking };
+}
+
+export async function generateImage({ prompt, size = '1024x1024', action = 'auto', images = [], thinking, onStream }) {
   const config = getConfig();
   if (!config) throw new Error('Not configured');
 
@@ -29,6 +57,10 @@ export async function generateImage({ prompt, size = '1024x1024', action = 'auto
     payload.reasoning = reasoning;
   }
 
+  if (onStream) {
+    payload.stream = true;
+  }
+
   const response = await fetch(`${config.baseURL.replace(/\/+$/, '')}/responses`, {
     method: 'POST',
     headers: {
@@ -45,35 +77,78 @@ export async function generateImage({ prompt, size = '1024x1024', action = 'auto
     throw new Error(`API error ${response.status}: ${detail}`);
   }
 
-  const data = await response.json();
+  if (!onStream) {
+    const data = await response.json();
+    const result = parseResponseOutput(data.output);
+    if (!result.text && !result.imageBase64) {
+      throw new Error('No usable content in API response');
+    }
+    return { ...result, raw: data };
+  }
 
-  let text = null;
-  let imageBase64 = null;
-  let thinkingText = null;
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+  let accText = null;
+  let accThinking = null;
+  let accImage = null;
+  let finalData = null;
 
-  for (const item of (data.output || [])) {
-    if (item.type === 'reasoning' && item.summary) {
-      for (const part of item.summary) {
-        if (part.type === 'summary_text' && part.text) {
-          thinkingText = thinkingText ? thinkingText + '\n' + part.text : part.text;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+
+    const parts = buffer.split('\n\n');
+    buffer = parts.pop();
+
+    for (const part of parts) {
+      if (!part.trim()) continue;
+
+      let eventType = '';
+      let eventData = '';
+      for (const line of part.split('\n')) {
+        if (line.startsWith('event: ')) {
+          eventType = line.slice(7).trim();
+        } else if (line.startsWith('data: ')) {
+          eventData = line.slice(6);
         }
       }
-    }
-    if (item.type === 'message' && item.content) {
-      for (const part of item.content) {
-        if (part.type === 'output_text' && part.text) {
-          text = text ? text + '\n' + part.text : part.text;
+
+      if (!eventData || eventData === '[DONE]') continue;
+
+      let parsed;
+      try { parsed = JSON.parse(eventData); } catch { continue; }
+
+      if (eventType === 'response.output_text.delta') {
+        accText = (accText || '') + (parsed.delta || '');
+        onStream({ text: accText, thinking: accThinking, imageBase64: accImage });
+      } else if (eventType === 'response.reasoning_summary_text.delta') {
+        accThinking = (accThinking || '') + (parsed.delta || '');
+        onStream({ text: accText, thinking: accThinking, imageBase64: accImage });
+      } else if (eventType === 'response.output_item.done') {
+        if (parsed.item?.type === 'image_generation_call' && parsed.item?.result) {
+          accImage = parsed.item.result;
+          onStream({ text: accText, thinking: accThinking, imageBase64: accImage });
         }
+      } else if (eventType === 'response.completed') {
+        finalData = parsed;
+        onStream({ text: accText, thinking: accThinking, imageBase64: accImage, done: true });
+      } else if (eventType === 'response.failed') {
+        throw new Error(parsed.error?.message || 'Generation failed');
       }
-    }
-    if (item.type === 'image_generation_call' && item.result) {
-      imageBase64 = item.result;
     }
   }
 
-  if (!text && !imageBase64) {
-    throw new Error('No usable content in API response');
+  if (finalData) {
+    const output = finalData.response?.output || finalData.output;
+    const result = parseResponseOutput(output);
+    return { ...result, raw: finalData };
   }
 
-  return { text, imageBase64, thinking: thinkingText, raw: data };
+  if (!accText && !accImage) {
+    throw new Error('No usable content in stream');
+  }
+
+  return { text: accText, imageBase64: accImage, thinking: accThinking, raw: null };
 }

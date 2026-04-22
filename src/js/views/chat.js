@@ -31,6 +31,7 @@ export function chatView(container, { conversationId, prompt, size, thinking, im
   inputWrap.style.cssText = 'padding:0 24px 16px;';
 
   let isGenerating = false;
+  let retryingIdx = -1;
 
   const { textInput, getThinking } = renderInputBar(inputWrap, {
     placeholder: 'Continue creating...',
@@ -70,7 +71,9 @@ export function chatView(container, { conversationId, prompt, size, thinking, im
     renderMessages();
     scrollToBottom();
 
-    const loadingEl = appendLoading();
+    const streamBubble = createStreamingBubble();
+    messagesEl.appendChild(streamBubble.element);
+    scrollToBottom();
 
     try {
       const result = await generateImage({
@@ -79,6 +82,10 @@ export function chatView(container, { conversationId, prompt, size, thinking, im
         thinking: thinkingLevel,
         action: refImages?.length ? 'edit' : 'auto',
         images: refImages || [],
+        onStream: (delta) => {
+          streamBubble.update(delta);
+          if (isNearBottom()) scrollToBottom();
+        },
       });
 
       conversation.messages.push({
@@ -97,7 +104,7 @@ export function chatView(container, { conversationId, prompt, size, thinking, im
       });
       await saveConversation(conversation);
     } finally {
-      loadingEl.remove();
+      streamBubble.element.remove();
       isGenerating = false;
       renderMessages();
       scrollToBottom();
@@ -115,27 +122,40 @@ export function chatView(container, { conversationId, prompt, size, thinking, im
     if (!userMsg) return;
 
     isGenerating = true;
-    const loadingEl = appendLoading();
+    retryingIdx = msgIdx;
     renderMessages();
+    scrollToBottom();
+
+    const streamBubble = createStreamingBubble();
+    const target = messagesEl.children[msgIdx];
+    if (target) {
+      messagesEl.replaceChild(streamBubble.element, target);
+    } else {
+      messagesEl.appendChild(streamBubble.element);
+    }
     scrollToBottom();
 
     try {
       const refImages = userMsg.imageDataUrl ? [userMsg.imageDataUrl] : [];
-      const size = getActiveVariant(msg)?.size || 'auto';
+      const retrySize = getActiveVariant(msg)?.size || 'auto';
       const thinkingLevel = getThinking ? getThinking() : 'low';
 
       const result = await generateImage({
         prompt: userMsg.text,
-        size,
+        size: retrySize,
         thinking: thinkingLevel,
         action: refImages.length ? 'edit' : 'auto',
         images: refImages,
+        onStream: (delta) => {
+          streamBubble.update(delta);
+          if (isNearBottom()) scrollToBottom();
+        },
       });
 
       if (msg.error) {
         conversation.messages[msgIdx] = {
           role: 'assistant',
-          variants: [{ text: result.text, imageBase64: result.imageBase64, thinking: result.thinking, size, timestamp: Date.now() }],
+          variants: [{ text: result.text, imageBase64: result.imageBase64, thinking: result.thinking, size: retrySize, timestamp: Date.now() }],
           activeVariant: 0,
           timestamp: Date.now(),
         };
@@ -143,14 +163,14 @@ export function chatView(container, { conversationId, prompt, size, thinking, im
         if (!msg.variants) {
           msg.variants = [{ imageBase64: msg.imageBase64, size: msg.size, timestamp: msg.timestamp }];
         }
-        msg.variants.push({ text: result.text, imageBase64: result.imageBase64, thinking: result.thinking, size, timestamp: Date.now() });
+        msg.variants.push({ text: result.text, imageBase64: result.imageBase64, thinking: result.thinking, size: retrySize, timestamp: Date.now() });
         msg.activeVariant = msg.variants.length - 1;
       }
       await saveConversation(conversation);
     } catch (err) {
       showToast(err.message || 'Retry failed', { type: 'error' });
     } finally {
-      loadingEl.remove();
+      retryingIdx = -1;
       isGenerating = false;
       renderMessages();
       scrollToBottom();
@@ -159,6 +179,7 @@ export function chatView(container, { conversationId, prompt, size, thinking, im
 
   function renderMessages() {
     messagesEl.innerHTML = '';
+    if (!conversation) return;
     for (let i = 0; i < conversation.messages.length; i++) {
       const msg = conversation.messages[i];
       if (msg.role === 'user') {
@@ -179,6 +200,16 @@ export function chatView(container, { conversationId, prompt, size, thinking, im
       } else if (msg.role === 'assistant') {
         const el = document.createElement('div');
         el.className = 'message message-ai';
+
+        if (retryingIdx >= 0 && i === retryingIdx) {
+          const bubble = document.createElement('div');
+          bubble.className = 'bubble-ai';
+          bubble.style.cssText = 'display:flex;align-items:center;gap:8px;color:var(--text-tertiary);font-size:16px;';
+          bubble.innerHTML = '<span class="loading-dot"></span> Generating...';
+          el.appendChild(bubble);
+          messagesEl.appendChild(el);
+          continue;
+        }
 
         if (msg.error) {
           const bubble = document.createElement('div');
@@ -298,14 +329,71 @@ export function chatView(container, { conversationId, prompt, size, thinking, im
     return null;
   }
 
-  function appendLoading() {
+  function createStreamingBubble() {
     const el = document.createElement('div');
     el.className = 'message message-ai';
-    el.innerHTML = `<div class="bubble-ai" style="display:flex;align-items:center;gap:8px;color:var(--text-tertiary);font-size:16px;">
-      <span class="loading-dot"></span> Generating...
-    </div>`;
-    messagesEl.appendChild(el);
-    return el;
+
+    const bubble = document.createElement('div');
+    bubble.className = 'bubble-ai';
+
+    const thinkingBlock = document.createElement('details');
+    thinkingBlock.className = 'thinking-block';
+    thinkingBlock.style.display = 'none';
+    thinkingBlock.open = true;
+    const thinkingSummary = document.createElement('summary');
+    thinkingSummary.className = 'thinking-summary';
+    thinkingSummary.textContent = 'Thinking';
+    const thinkingContent = document.createElement('div');
+    thinkingContent.className = 'thinking-content';
+    thinkingBlock.appendChild(thinkingSummary);
+    thinkingBlock.appendChild(thinkingContent);
+    bubble.appendChild(thinkingBlock);
+
+    const textEl = document.createElement('div');
+    textEl.className = 'bubble-ai-text';
+    textEl.style.display = 'none';
+    bubble.appendChild(textEl);
+
+    const loadingIndicator = document.createElement('div');
+    loadingIndicator.style.cssText = 'display:flex;align-items:center;gap:8px;color:var(--text-tertiary);font-size:16px;';
+    loadingIndicator.innerHTML = '<span class="loading-dot"></span> Generating...';
+    bubble.appendChild(loadingIndicator);
+
+    el.appendChild(bubble);
+
+    return {
+      element: el,
+      update({ text, thinking, imageBase64, done }) {
+        const showThinking = getConfig()?.showThinking;
+        if (showThinking && thinking) {
+          thinkingBlock.style.display = '';
+          thinkingContent.textContent = thinking;
+        }
+        if (text) {
+          textEl.style.display = '';
+          textEl.textContent = text;
+          loadingIndicator.style.display = 'none';
+        }
+        if (imageBase64) {
+          let img = bubble.querySelector('.streaming-image');
+          if (!img) {
+            img = document.createElement('img');
+            img.className = 'streaming-image';
+            img.style.cssText = 'max-width:280px;border-radius:var(--radius-lg);display:block;margin-top:10px;';
+            bubble.appendChild(img);
+          }
+          img.src = `data:image/png;base64,${imageBase64}`;
+          loadingIndicator.style.display = 'none';
+        }
+        if (done) {
+          loadingIndicator.style.display = 'none';
+        }
+      }
+    };
+  }
+
+  function isNearBottom() {
+    return messagesEl.scrollHeight - messagesEl.scrollTop - messagesEl.clientHeight < 100;
   }
 
   function scrollToBottom() {

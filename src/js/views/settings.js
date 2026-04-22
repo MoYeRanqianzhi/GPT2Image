@@ -76,11 +76,11 @@ function renderConnectView(container) {
       if (!resp.ok && resp.status !== 404) {
         throw new Error(`HTTP ${resp.status}`);
       }
-      saveConfig({ baseURL, apiKey, model, showThinking: false });
+      saveConfig({ baseURL, apiKey, model, showThinking: false, thinkingLevel: 'low' });
       showToast('Connected successfully');
       navigate('create');
     } catch (err) {
-      saveConfig({ baseURL, apiKey, model, showThinking: false });
+      saveConfig({ baseURL, apiKey, model, showThinking: false, thinkingLevel: 'low' });
       showToast('Saved (could not verify connection)', { type: 'error' });
       navigate('create');
     }
@@ -175,7 +175,7 @@ function renderFullSettings(container, config) {
       return;
     }
 
-    saveConfig({ baseURL, apiKey, model, showThinking });
+    saveConfig({ baseURL, apiKey, model, showThinking, thinkingLevel: config.thinkingLevel || 'low' });
     showToast('Settings saved');
   });
   wrapper.appendChild(saveBtn);
