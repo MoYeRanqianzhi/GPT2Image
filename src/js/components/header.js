@@ -47,7 +47,10 @@ export function renderHeader(container, { activeTab = 'create', showNewChat = fa
     if (action?.dataset.action === 'new-chat') navigate('create');
     if (action?.dataset.action === 'toggle-theme') {
       const nowDark = !isDarkMode();
-      toggleDarkMode(nowDark);
+      const rect = action.getBoundingClientRect();
+      const cx = rect.left + rect.width / 2;
+      const cy = rect.top + rect.height / 2;
+      toggleDarkMode(nowDark, cx, cy);
       const btn = action;
       btn.innerHTML = nowDark
         ? iconSun().replace('width="24" height="24"', 'width="18" height="18"')
