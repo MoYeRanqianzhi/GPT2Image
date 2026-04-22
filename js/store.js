@@ -38,21 +38,26 @@ export function getAllImages() {
   for (const conv of getConversations()) {
     for (let i = 0; i < conv.messages.length; i++) {
       const msg = conv.messages[i];
-      if (msg.role === 'assistant' && msg.imageBase64) {
-        let prompt = '';
-        for (let j = i - 1; j >= 0; j--) {
-          if (conv.messages[j].role === 'user') {
-            prompt = conv.messages[j].text;
-            break;
-          }
+      if (msg.role !== 'assistant') continue;
+
+      let prompt = '';
+      for (let j = i - 1; j >= 0; j--) {
+        if (conv.messages[j].role === 'user') { prompt = conv.messages[j].text; break; }
+      }
+
+      const variants = msg.variants
+        || (msg.imageBase64 ? [{ imageBase64: msg.imageBase64, size: msg.size, timestamp: msg.timestamp }] : []);
+
+      for (const v of variants) {
+        if (v.imageBase64) {
+          images.push({
+            imageBase64: v.imageBase64,
+            size: v.size || 'auto',
+            prompt,
+            conversationId: conv.id,
+            timestamp: v.timestamp || msg.timestamp,
+          });
         }
-        images.push({
-          imageBase64: msg.imageBase64,
-          size: msg.size || '1024x1024',
-          prompt,
-          conversationId: conv.id,
-          timestamp: msg.timestamp
-        });
       }
     }
   }

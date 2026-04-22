@@ -60,3 +60,15 @@ export function iconTrash() {
 export function iconLoader() {
   return wrap('<circle cx="12" cy="12" r="10" stroke-dasharray="32" stroke-dashoffset="32"><animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="1s" repeatCount="indefinite"/></circle>');
 }
+
+export function iconRetry() {
+  return wrap('<polyline points="1 4 1 10 7 10"/><polyline points="23 20 23 14 17 14"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/>');
+}
+
+export function iconChevronLeft() {
+  return wrap('<polyline points="15 18 9 12 15 6"/>');
+}
+
+export function iconChevronRight() {
+  return wrap('<polyline points="9 18 15 12 9 6"/>');
+}

@@ -10,10 +10,15 @@ export async function generateImage({ prompt, size = '1024x1024', action = 'auto
     inputContent.push({ type: 'input_image', image_url: dataUrl });
   }
 
+  const tool = { type: 'image_generation', action };
+  if (size && size !== 'auto') {
+    tool.size = size;
+  }
+
   const payload = {
     model: config.model || 'gpt-5.4',
     input: [{ role: 'user', content: inputContent }],
-    tools: [{ type: 'image_generation', size, action }]
+    tools: [tool]
   };
 
   const response = await fetch(`${config.baseURL.replace(/\/+$/, '')}/responses`, {
