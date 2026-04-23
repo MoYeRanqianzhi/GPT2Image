@@ -41,7 +41,7 @@ function parseResponseOutput(output) {
   return { text, imageBase64, thinking };
 }
 
-export async function generateImage({ prompt, size = '1024x1024', action = 'auto', images = [], thinking, onStream, history = [] }) {
+export async function generateImage({ prompt, size = '1024x1024', action = 'auto', images = [], thinking, onStream, history = [], signal }) {
   const config = getConfig();
   if (!config) throw new Error('Not configured');
 
@@ -100,7 +100,8 @@ export async function generateImage({ prompt, size = '1024x1024', action = 'auto
       'Authorization': `Bearer ${config.apiKey}`,
       'Content-Type': 'application/json'
     },
-    body: JSON.stringify(payload)
+    body: JSON.stringify(payload),
+    ...(signal && { signal })
   });
 
   if (!response.ok) {

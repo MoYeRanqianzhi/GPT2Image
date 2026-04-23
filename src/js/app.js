@@ -6,6 +6,7 @@ import { landingView } from './views/landing.js';
 import { chatView } from './views/chat.js';
 import { galleryView } from './views/gallery.js';
 import { historyView } from './views/history.js';
+import { waterfallView } from './views/waterfall.js';
 
 async function init() {
   await initStore();
@@ -26,6 +27,10 @@ async function init() {
 
   registerRoute('gallery', (container) => {
     galleryView(container);
+  });
+
+  registerRoute('waterfall', (container) => {
+    return waterfallView(container);
   });
 
   registerRoute('history', (container) => {

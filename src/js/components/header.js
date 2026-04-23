@@ -9,6 +9,7 @@ export function renderHeader(container, { activeTab = 'create', showNewChat = fa
   const tabs = [
     { id: 'create', label: 'Create' },
     { id: 'gallery', label: 'Gallery' },
+    { id: 'waterfall', label: 'Waterfall' },
     { id: 'history', label: 'History' },
   ];
 
