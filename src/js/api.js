@@ -1,16 +1,35 @@
 import { getConfig } from './store.js';
 
-let cachedSystemPrompt = null;
+let cachedSystemPromptTemplate = null;
 
-async function getSystemPrompt() {
-  if (cachedSystemPrompt !== null) return cachedSystemPrompt;
-  try {
-    const resp = await fetch('assets/system-prompt.md');
-    cachedSystemPrompt = resp.ok ? await resp.text() : '';
-  } catch {
-    cachedSystemPrompt = '';
+const MODEL_METADATA = {
+  'gpt-5.4':   { cutoff: 'June 2025', context: '1M tokens' },
+  'gpt-4.1':   { cutoff: 'March 2025', context: '1M tokens' },
+  'gpt-4o':    { cutoff: 'October 2023', context: '128k tokens' },
+};
+
+function injectPromptVariables(template, config) {
+  const model = config.model || 'gpt-5.4';
+  const meta = MODEL_METADATA[model] || { cutoff: 'unknown', context: 'unknown' };
+  const vars = {
+    CURRENT_DATE: new Date().toISOString().split('T')[0],
+    KNOWLEDGE_CUTOFF: meta.cutoff,
+    CONTEXT_WINDOW: meta.context,
+    MODEL: model,
+  };
+  return template.replace(/\{\{(\w+)\}\}/g, (_, key) => vars[key] ?? `{{${key}}}`);
+}
+
+async function getSystemPrompt(config) {
+  if (cachedSystemPromptTemplate === null) {
+    try {
+      const resp = await fetch('assets/system-prompt.md');
+      cachedSystemPromptTemplate = resp.ok ? await resp.text() : '';
+    } catch {
+      cachedSystemPromptTemplate = '';
+    }
   }
-  return cachedSystemPrompt;
+  return injectPromptVariables(cachedSystemPromptTemplate, config);
 }
 
 function parseResponseOutput(output) {
@@ -73,7 +92,7 @@ export async function generateImage({ prompt, size = '1024x1024', action = 'auto
     tool.size = size;
   }
 
-  const instructions = await getSystemPrompt();
+  const instructions = await getSystemPrompt(config);
 
   const payload = {
     model: config.model || 'gpt-5.4',
