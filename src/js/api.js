@@ -2,25 +2,14 @@ import { getConfig } from './store.js';
 
 let cachedSystemPromptTemplate = null;
 
-const MODEL_METADATA = {
-  'gpt-5.4':   { cutoff: 'June 2025', context: '1M tokens' },
-  'gpt-4.1':   { cutoff: 'March 2025', context: '1M tokens' },
-  'gpt-4o':    { cutoff: 'October 2023', context: '128k tokens' },
-};
-
-function injectPromptVariables(template, config) {
-  const model = config.model || 'gpt-5.4';
-  const meta = MODEL_METADATA[model] || { cutoff: 'unknown', context: 'unknown' };
+function injectPromptVariables(template) {
   const vars = {
     CURRENT_DATE: new Date().toISOString().split('T')[0],
-    KNOWLEDGE_CUTOFF: meta.cutoff,
-    CONTEXT_WINDOW: meta.context,
-    MODEL: model,
   };
   return template.replace(/\{\{(\w+)\}\}/g, (_, key) => vars[key] ?? `{{${key}}}`);
 }
 
-async function getSystemPrompt(config) {
+async function getSystemPrompt() {
   if (cachedSystemPromptTemplate === null) {
     try {
       const resp = await fetch('assets/system-prompt.md');
@@ -29,7 +18,7 @@ async function getSystemPrompt(config) {
       cachedSystemPromptTemplate = '';
     }
   }
-  return injectPromptVariables(cachedSystemPromptTemplate, config);
+  return injectPromptVariables(cachedSystemPromptTemplate);
 }
 
 function parseResponseOutput(output) {
@@ -92,7 +81,7 @@ export async function generateImage({ prompt, size = '1024x1024', action = 'auto
     tool.size = size;
   }
 
-  const instructions = await getSystemPrompt(config);
+  const instructions = await getSystemPrompt();
 
   const payload = {
     model: config.model || 'gpt-5.4',
