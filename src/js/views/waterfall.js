@@ -6,7 +6,7 @@ import { saveConversation, generateId, getConfig } from '../store.js';
 import { openLightbox } from '../components/lightbox.js';
 import { showToast } from '../components/toast.js';
 import { renderMarkdown } from '../markdown.js';
-import { iconSave, iconDownload, iconExpand, iconChevronDown, iconRetry, iconLoader, iconLayers } from '../icons.js';
+import { iconSave, iconDownload, iconExpand, iconChevronDown, iconRetry } from '../icons.js';
 import { navigate } from '../router.js';
 
 const TIER_PRESETS = [
@@ -14,6 +14,13 @@ const TIER_PRESETS = [
   { value: 5, label: '5' },
   { value: 10, label: '10' },
   { value: 20, label: '20' },
+];
+
+const SUGGESTIONS = [
+  'A serene mountain lake at sunset, oil painting',
+  'Minimalist logo for a tech startup',
+  'Cyberpunk city street in the rain, neon lights',
+  'Watercolor portrait of a cat wearing glasses',
 ];
 
 export function waterfallView(container) {
@@ -27,6 +34,8 @@ export function waterfallView(container) {
 
   let currentTier = 5;
   let currentPrompt = '';
+  let currentSize = 'auto';
+  let currentThinking = '';
   let activeRequests = 0;
   let sessionCount = 0;
   let isGenerating = false;
@@ -36,7 +45,7 @@ export function waterfallView(container) {
   const wrapper = document.createElement('div');
   wrapper.className = 'waterfall-wrapper';
 
-  // --- Tier bar (top) ---
+  // --- Tier bar (top, always visible) ---
   const tierBar = document.createElement('div');
   tierBar.className = 'waterfall-tier-bar';
 
@@ -91,37 +100,60 @@ export function waterfallView(container) {
 
   tierBar.appendChild(tierDropdown);
 
-  // --- Scroll area + grid ---
-  const scrollContainer = document.createElement('div');
-  scrollContainer.className = 'waterfall-scroll';
+  // --- Landing section (centered input, idle state) ---
+  const landingSection = document.createElement('div');
+  landingSection.className = 'waterfall-landing';
 
-  const grid = document.createElement('div');
-  grid.className = 'waterfall-grid';
+  const title = document.createElement('h1');
+  title.className = 'landing-title';
+  title.textContent = 'What world will you flood with art?';
 
-  const emptyState = document.createElement('div');
-  emptyState.className = 'waterfall-empty';
-  emptyState.innerHTML = `
-    <div class="waterfall-empty-icon">${iconLayers().replace('width="24" height="24"', 'width="40" height="40"')}</div>
-    <div>Enter a prompt below to start generating</div>
-    <div style="font-size:13px;color:var(--text-muted)">Each batch generates ${currentTier} images simultaneously</div>
-  `;
+  const subtitle = document.createElement('p');
+  subtitle.className = 'landing-subtitle';
+  subtitle.textContent = 'One prompt, endless creations';
 
-  scrollContainer.appendChild(emptyState);
-  scrollContainer.appendChild(grid);
+  const inputWrap = document.createElement('div');
+  inputWrap.className = 'landing-input';
 
-  // --- Input area (bottom, reuse renderInputBar) ---
-  const inputArea = document.createElement('div');
-  inputArea.className = 'waterfall-input-area';
-
-  const inputBarResult = renderInputBar(inputArea, {
+  const inputBarResult = renderInputBar(inputWrap, {
     placeholder: 'Describe the images you want to generate...',
     onSend: handleSend,
   });
 
+  const chips = document.createElement('div');
+  chips.className = 'suggestion-chips';
+  for (const s of SUGGESTIONS) {
+    const chip = document.createElement('button');
+    chip.className = 'chip';
+    chip.textContent = s.length > 40 ? s.slice(0, 40) + '...' : s;
+    chip.title = s;
+    chip.addEventListener('click', () => {
+      inputBarResult.textInput.value = s;
+      inputBarResult.textInput.focus();
+      inputBarResult.textInput.dispatchEvent(new Event('input'));
+    });
+    chips.appendChild(chip);
+  }
+
+  landingSection.appendChild(title);
+  landingSection.appendChild(subtitle);
+  landingSection.appendChild(inputWrap);
+  landingSection.appendChild(chips);
+
+  // --- Scroll area + grid (active state, initially hidden) ---
+  const scrollContainer = document.createElement('div');
+  scrollContainer.className = 'waterfall-scroll';
+  scrollContainer.style.display = 'none';
+
+  const grid = document.createElement('div');
+  grid.className = 'waterfall-grid';
+
+  scrollContainer.appendChild(grid);
+
   // --- Assemble ---
   wrapper.appendChild(tierBar);
+  wrapper.appendChild(landingSection);
   wrapper.appendChild(scrollContainer);
-  wrapper.appendChild(inputArea);
   container.appendChild(wrapper);
 
   // --- First-time warning ---
@@ -144,13 +176,16 @@ export function waterfallView(container) {
   async function handleSend({ prompt, size, thinking }) {
     if (!prompt.trim()) return;
     currentPrompt = prompt.trim();
+    currentSize = size || 'auto';
+    currentThinking = thinking || inputBarResult.getThinking();
 
-    if (emptyState.parentNode) emptyState.remove();
-    updateEmptyHint();
-    await triggerBatch(size, thinking);
+    landingSection.style.display = 'none';
+    scrollContainer.style.display = '';
+
+    await triggerBatch();
   }
 
-  async function triggerBatch(size, thinking) {
+  async function triggerBatch() {
     if (!currentPrompt) return;
 
     const tier = currentTier;
@@ -170,7 +205,6 @@ export function waterfallView(container) {
     sessionCount += batchSize;
     isGenerating = true;
 
-    const thinkingLevel = thinking || inputBarResult.getThinking();
     const aspectRatios = ['1/1', '3/4', '4/3', '2/3'];
 
     for (let i = 0; i < batchSize; i++) {
@@ -184,8 +218,8 @@ export function waterfallView(container) {
 
       generateImage({
         prompt: currentPrompt,
-        size: size || 'auto',
-        thinking: thinkingLevel,
+        size: currentSize,
+        thinking: currentThinking,
         signal: controller.signal,
         onStream: (delta) => updateCardStream(card, delta),
       })
@@ -194,7 +228,7 @@ export function waterfallView(container) {
           if (err.name === 'AbortError') {
             card.remove();
           } else {
-            showErrorCard(card, err.message, currentPrompt, size || 'auto', thinkingLevel);
+            showErrorCard(card, err.message);
           }
         })
         .finally(() => {
@@ -279,7 +313,7 @@ export function waterfallView(container) {
     }
   }
 
-  function showErrorCard(card, message, prompt, size, thinking) {
+  function showErrorCard(card, message) {
     card.classList.remove('loading');
     card.classList.add('error-card');
     card.style.aspectRatio = '';
@@ -296,15 +330,15 @@ export function waterfallView(container) {
       const controller = new AbortController();
       abortControllers.push(controller);
       generateImage({
-        prompt,
-        size,
-        thinking,
+        prompt: currentPrompt,
+        size: currentSize,
+        thinking: currentThinking,
         signal: controller.signal,
         onStream: (delta) => updateCardStream(card, delta),
       })
-        .then((result) => finalizeCard(card, result, prompt))
+        .then((result) => finalizeCard(card, result, currentPrompt))
         .catch((err) => {
-          if (err.name !== 'AbortError') showErrorCard(card, err.message, prompt, size, thinking);
+          if (err.name !== 'AbortError') showErrorCard(card, err.message);
         })
         .finally(() => {
           activeRequests--;
@@ -340,11 +374,6 @@ export function waterfallView(container) {
     };
     await saveConversation(conv);
     showToast('Saved to Gallery');
-  }
-
-  function updateEmptyHint() {
-    const hint = emptyState.querySelector('[style]');
-    if (hint) hint.textContent = `Each batch generates ${currentTier} images simultaneously`;
   }
 
   // --- Cleanup on navigation ---
