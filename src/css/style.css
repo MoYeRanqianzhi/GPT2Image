@@ -1426,8 +1426,9 @@ h1, h2 {
 }
 
 .waterfall-grid {
-  column-count: 4;
-  column-gap: 15px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 15px;
   padding: 20px 24px;
 }
 
@@ -1476,8 +1477,6 @@ h1, h2 {
 }
 
 .waterfall-card {
-  break-inside: avoid;
-  margin-bottom: 15px;
   border-radius: var(--radius-lg);
   overflow: hidden;
   position: relative;
@@ -1693,13 +1692,13 @@ h1, h2 {
 
 @media (max-width: 1200px) {
   .waterfall-grid {
-    column-count: 3;
+    grid-template-columns: repeat(3, 1fr);
   }
 }
 
 @media (max-width: 900px) {
   .waterfall-grid {
-    column-count: 2;
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
@@ -1758,8 +1757,8 @@ h1, h2 {
   }
 
   .waterfall-grid {
-    column-count: 2;
-    column-gap: 10px;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
     padding: 15px;
   }
 
