@@ -38,7 +38,6 @@ export function waterfallView(container) {
   let currentThinking = '';
   let activeRequests = 0;
   let sessionCount = 0;
-  let isGenerating = false;
   const milestoneShown = new Set();
   const abortControllers = [];
 
@@ -148,7 +147,12 @@ export function waterfallView(container) {
   const grid = document.createElement('div');
   grid.className = 'waterfall-grid';
 
+  const loadTrigger = document.createElement('div');
+  loadTrigger.className = 'waterfall-load-trigger';
+  loadTrigger.innerHTML = `<div class="waterfall-load-arrow">↓</div><div class="waterfall-load-text">Scroll to generate more</div>`;
+
   scrollContainer.appendChild(grid);
+  scrollContainer.appendChild(loadTrigger);
 
   // --- Assemble ---
   wrapper.appendChild(tierBar);
@@ -161,16 +165,34 @@ export function waterfallView(container) {
     showWarningPopup({ type: 'first-time', tier: currentTier });
   }
 
-  // --- Infinite scroll ---
-  function onScroll() {
-    if (!currentPrompt || isGenerating) return;
-    if (activeRequests >= currentTier * 3) return;
-    const { scrollTop, scrollHeight, clientHeight } = scrollContainer;
-    if (scrollHeight - scrollTop - clientHeight < 200) {
-      triggerBatch();
+  // --- Pull-to-load via IntersectionObserver on trigger zone ---
+  let loadingMore = false;
+
+  function setTriggerLoading(loading) {
+    if (loading) {
+      loadTrigger.classList.add('loading');
+      loadTrigger.querySelector('.waterfall-load-text').textContent = 'Generating...';
+      loadTrigger.querySelector('.waterfall-load-arrow').textContent = '⟳';
+    } else {
+      loadTrigger.classList.remove('loading');
+      loadTrigger.querySelector('.waterfall-load-text').textContent = 'Scroll to generate more';
+      loadTrigger.querySelector('.waterfall-load-arrow').textContent = '↓';
     }
   }
-  scrollContainer.addEventListener('scroll', onScroll);
+
+  const observer = new IntersectionObserver((entries) => {
+    if (!entries[0].isIntersecting) return;
+    if (!currentPrompt || loadingMore) return;
+    if (activeRequests >= currentTier * 3) return;
+    loadingMore = true;
+    setTriggerLoading(true);
+    triggerBatch().finally(() => {
+      loadingMore = false;
+      setTriggerLoading(false);
+    });
+  }, { root: scrollContainer, threshold: 0.1 });
+
+  observer.observe(loadTrigger);
 
   // --- Handlers ---
   async function handleSend({ prompt, size, thinking }) {
@@ -203,7 +225,6 @@ export function waterfallView(container) {
     }
 
     sessionCount += batchSize;
-    isGenerating = true;
 
     const aspectRatios = ['1/1', '3/4', '4/3', '2/3'];
 
@@ -235,7 +256,6 @@ export function waterfallView(container) {
           activeRequests--;
           const idx = abortControllers.indexOf(controller);
           if (idx >= 0) abortControllers.splice(idx, 1);
-          if (activeRequests === 0) isGenerating = false;
         });
     }
   }
@@ -382,7 +402,7 @@ export function waterfallView(container) {
       ctrl.abort();
     }
     abortControllers.length = 0;
-    scrollContainer.removeEventListener('scroll', onScroll);
+    observer.disconnect();
   }
 
   return cleanup;

@@ -1441,6 +1441,40 @@ h1, h2 {
   padding: 0 24px;
 }
 
+.waterfall-load-trigger {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 32px 20px;
+  color: var(--text-muted);
+  cursor: default;
+  transition: color var(--transition-fast);
+}
+
+.waterfall-load-arrow {
+  font-size: 20px;
+  animation: bounce-down 1.5s ease-in-out infinite;
+}
+
+.waterfall-load-trigger.loading .waterfall-load-arrow {
+  animation: spin 1s linear infinite;
+}
+
+.waterfall-load-text {
+  font-size: 13px;
+}
+
+@keyframes bounce-down {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(6px); }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
 .waterfall-card {
   break-inside: avoid;
   margin-bottom: 15px;
