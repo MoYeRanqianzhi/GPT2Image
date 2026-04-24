@@ -1,0 +1,29 @@
+{
+  "name": "gpt2image",
+  "private": true,
+  "version": "2.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "katex": "^0.16.45",
+    "lucide-react": "^1.9.0",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5",
+    "react-markdown": "^10.1.0",
+    "react-router-dom": "^7.14.2",
+    "rehype-katex": "^7.0.1",
+    "remark-math": "^6.0.0",
+    "zustand": "^5.0.12"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.1",
+    "typescript": "^6.0.3",
+    "vite": "^8.0.10"
+  }
+}

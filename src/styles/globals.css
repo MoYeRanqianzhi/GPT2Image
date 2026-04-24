@@ -65,7 +65,7 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-#app {
+#root {
   min-height: 100vh;
   display: flex;
   flex-direction: column;

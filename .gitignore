@@ -3,3 +3,4 @@ screenshots/
 .superpowers/
 .playwright-mcp/
 node_modules/
+node_modules/\ndist/\n*.stackdump\n*.png\n
