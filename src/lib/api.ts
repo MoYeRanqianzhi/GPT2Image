@@ -9,7 +9,7 @@ import type {
 
 const REQUEST_TIMEOUT_MS = 120_000;
 
-function classifyFetchError(err: unknown): Error {
+async function classifyFetchError(err: unknown, url?: string): Promise<Error> {
   if (err instanceof DOMException && err.name === 'AbortError') {
     return err as Error;
   }
@@ -17,14 +17,24 @@ function classifyFetchError(err: unknown): Error {
     return new Error('Request timed out — the server may be overloaded. Try again later.');
   }
   const msg = err instanceof Error ? err.message : String(err);
-  if (msg === 'Failed to fetch' || msg.includes('NetworkError') || msg.includes('ERR_')) {
-    return new Error(
-      'Cannot reach the API server. Check your network connection and verify the API Base URL in Settings.'
-    );
-  }
   if (msg.includes('CORS') || msg.includes('blocked')) {
     return new Error(
-      'Request blocked by CORS policy. The API server may not allow browser requests from this origin.'
+      'CORS error: The API server does not allow browser requests. This API provider may only support server-side or desktop clients (e.g. Cherry Studio). Try a different API provider, or deploy GPT2IMAGE behind a reverse proxy.'
+    );
+  }
+  if (msg === 'Failed to fetch' || msg.includes('NetworkError') || msg.includes('ERR_')) {
+    if (url) {
+      try {
+        await fetch(url, { method: 'HEAD', mode: 'no-cors', signal: AbortSignal.timeout(5000) });
+        return new Error(
+          'CORS error: The API server is reachable but blocks browser requests (CORS preflight failed). This API provider likely only supports server-side or desktop clients. Try a different provider, or deploy behind a reverse proxy.'
+        );
+      } catch {
+        // server truly unreachable
+      }
+    }
+    return new Error(
+      'Cannot reach the API server. Check your network connection and verify the API Base URL in Settings.'
     );
   }
   return new Error(`Network error: ${msg}`);
@@ -235,7 +245,8 @@ export async function generateImage({
       signal: combinedSignal,
     });
   } catch (err) {
-    throw classifyFetchError(err);
+    const apiUrl = `${config.baseURL.replace(/\/+$/, '')}/responses`;
+    throw await classifyFetchError(err, apiUrl);
   }
 
   if (!response.ok) {
