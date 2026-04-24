@@ -8,8 +8,7 @@ import type { Conversation, Message } from '../types';
 function findFirstImage(messages: Message[]): string | null {
   for (const msg of messages) {
     if (msg.role !== 'assistant') continue;
-    const anyMsg = msg as Message & { imageBase64?: string };
-    if (anyMsg.imageBase64) return anyMsg.imageBase64;
+    if (msg.imageBase64) return msg.imageBase64;
     if (msg.variants) {
       for (const v of msg.variants) {
         if (v.imageBase64) return v.imageBase64;

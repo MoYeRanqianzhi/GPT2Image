@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Header } from '../components/Header';
 import { InputBar } from '../components/InputBar';
 import type { InputBarHandle, SendData } from '../components/InputBar';
-import { WarningPopup } from '../components/WarningPopup';
+import { WarningPopup, hasSeenFirstTimeWarning } from '../components/WarningPopup';
 import { useLightbox } from '../components/Lightbox';
 import { useToast } from '../components/Toast';
 import { MarkdownRenderer } from '../lib/markdown';
@@ -39,14 +39,6 @@ interface WaterfallCard {
   streamImage?: string;
 }
 
-function hasSeenFirstTimeWarning(): boolean {
-  return !!localStorage.getItem('gpt2image_waterfall_warned');
-}
-
-function markFirstTimeWarning() {
-  localStorage.setItem('gpt2image_waterfall_warned', '1');
-}
-
 export default function Waterfall() {
   const config = useConfigStore((s) => s.config);
   const navigate = useNavigate();
@@ -66,6 +58,7 @@ export default function Waterfall() {
   const [cards, setCards] = useState<WaterfallCard[]>([]);
   const [tierOpen, setTierOpen] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
+  const loadingMoreRef = useRef(false);
   const [warningPopup, setWarningPopup] = useState<{
     type: 'first-time' | 'milestone';
     tier: number;
@@ -89,10 +82,8 @@ export default function Waterfall() {
   useEffect(() => { currentThinkingRef.current = currentThinking; }, [currentThinking]);
   useEffect(() => { currentTierRef.current = currentTier; }, [currentTier]);
 
-  const [showFirstTimeWarning, setShowFirstTimeWarning] = useState(!hasSeenFirstTimeWarning());
-
   useEffect(() => {
-    if (showFirstTimeWarning) {
+    if (!hasSeenFirstTimeWarning()) {
       setWarningPopup({ type: 'first-time', tier: currentTier, count: 0 });
     }
   }, []);
@@ -195,16 +186,20 @@ export default function Waterfall() {
     const observer = new IntersectionObserver(
       (entries) => {
         if (!entries[0].isIntersecting) return;
-        if (!currentPromptRef.current || loadingMore) return;
+        if (!currentPromptRef.current || loadingMoreRef.current) return;
         if (activeRequestsRef.current >= currentTierRef.current * 3) return;
+        loadingMoreRef.current = true;
         setLoadingMore(true);
-        triggerBatch().finally(() => setLoadingMore(false));
+        triggerBatch().finally(() => {
+          loadingMoreRef.current = false;
+          setLoadingMore(false);
+        });
       },
       { root: scrollContainerRef.current, threshold: 0.1 },
     );
     observer.observe(loadTriggerRef.current);
     return () => observer.disconnect();
-  }, [isActive, triggerBatch, loadingMore]);
+  }, [isActive, triggerBatch]);
 
   async function handleSend(data: SendData) {
     if (!data.prompt.trim()) return;
@@ -302,10 +297,6 @@ export default function Waterfall() {
           tier={warningPopup.tier}
           count={warningPopup.count}
           onClose={() => {
-            if (warningPopup.type === 'first-time') {
-              markFirstTimeWarning();
-              setShowFirstTimeWarning(false);
-            }
             setWarningPopup(null);
           }}
         />

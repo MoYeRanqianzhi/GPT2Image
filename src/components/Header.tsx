@@ -78,6 +78,7 @@ export function Header({ activeTab = 'create', showNewChat = false }: HeaderProp
         </div>
         <button
           className="header-icon-btn"
+          data-action="menu"
           title="Menu"
           onClick={(e) => {
             e.stopPropagation();

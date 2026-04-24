@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { AlertTriangle } from 'lucide-react';
 
 const STORAGE_KEY = 'gpt2image_waterfall_warned';
@@ -13,32 +13,40 @@ interface WarningPopupProps {
   onClose: () => void;
 }
 
-const TEXTS = {
+const TEXTS: Record<Lang, Record<WarningType, {
+  title: string;
+  body: (tier: number, count: number) => ReactNode;
+  btn: string;
+}>> = {
   en: {
     'first-time': {
       title: 'Credit Consumption Warning',
-      body: (tier: number, _count: number) =>
-        `Waterfall mode generates <strong>${tier}</strong> images per batch simultaneously. This consumes API credits much faster than single generation. Scroll down to automatically generate more batches.`,
+      body: (tier) => (
+        <>Waterfall mode generates <strong>{tier}</strong> images per batch simultaneously. This consumes API credits much faster than single generation. Scroll down to automatically generate more batches.</>
+      ),
       btn: 'I Understand, Continue',
     },
     milestone: {
       title: 'Usage Reminder',
-      body: (_tier: number, count: number) =>
-        `You have generated <strong>${count}</strong> images in this session. API credits are being consumed rapidly. Continue?`,
+      body: (_, count) => (
+        <>You have generated <strong>{count}</strong> images in this session. API credits are being consumed rapidly. Continue?</>
+      ),
       btn: 'Continue',
     },
   },
   zh: {
     'first-time': {
       title: '额度消耗提醒',
-      body: (tier: number, _count: number) =>
-        `瀑布流模式每批次同时生成 <strong>${tier}</strong> 张图片，API 额度消耗远高于单张生成。向下滚动将自动生成更多批次。`,
+      body: (tier) => (
+        <>瀑布流模式每批次同时生成 <strong>{tier}</strong> 张图片，API 额度消耗远高于单张生成。向下滚动将自动生成更多批次。</>
+      ),
       btn: '我已了解，继续使用',
     },
     milestone: {
       title: '用量提醒',
-      body: (_tier: number, count: number) =>
-        `本次会话已生成 <strong>${count}</strong> 张图片，API 额度正在快速消耗。是否继续？`,
+      body: (_, count) => (
+        <>本次会话已生成 <strong>{count}</strong> 张图片，API 额度正在快速消耗。是否继续？</>
+      ),
       btn: '继续',
     },
   },
@@ -89,10 +97,7 @@ export function WarningPopup({
           <AlertTriangle size={36} />
         </div>
         <div className="warning-popup-title">{t.title}</div>
-        <div
-          className="warning-popup-body"
-          dangerouslySetInnerHTML={{ __html: t.body(tier, count) }}
-        />
+        <div className="warning-popup-body">{t.body(tier, count)}</div>
         <button className="warning-popup-btn" onClick={handleConfirm}>
           {t.btn}
         </button>

@@ -23,6 +23,10 @@ export interface Message {
   activeVariant?: number;
   error?: string;
   timestamp: number;
+  /** @deprecated Legacy field from v1 — use variants[] instead */
+  imageBase64?: string;
+  /** @deprecated Legacy field from v1 — use variants[].size instead */
+  size?: string;
 }
 
 export interface Variant {

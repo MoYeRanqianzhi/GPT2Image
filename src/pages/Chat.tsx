@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { Header } from '../components/Header';
 import { InputBar } from '../components/InputBar';
 import type { InputBarHandle, SendData } from '../components/InputBar';
@@ -10,11 +10,11 @@ import { MarkdownRenderer } from '../lib/markdown';
 import { generateImage } from '../lib/api';
 import { useConfigStore, useConversationStore, generateId } from '../lib/store';
 import { RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
-import type { Conversation, Message, Variant } from '../types';
+import type { Conversation, Message, Variant, ThinkingLevel } from '../types';
 
 function getVariants(msg: Message): Variant[] {
   if (msg.variants) return msg.variants;
-  if ((msg as any).imageBase64) return [{ imageBase64: (msg as any).imageBase64, size: (msg as any).size, timestamp: msg.timestamp }];
+  if (msg.imageBase64) return [{ imageBase64: msg.imageBase64, size: msg.size || 'auto', timestamp: msg.timestamp }];
   return [];
 }
 
@@ -33,7 +33,6 @@ interface StreamState {
 
 export default function Chat() {
   const location = useLocation();
-  const navigate = useNavigate();
   const { open: openLightbox } = useLightbox();
   const toast = useToast();
 
@@ -56,8 +55,10 @@ export default function Chat() {
   const [stream, setStream] = useState<StreamState | null>(null);
   const messagesRef = useRef<HTMLDivElement>(null);
   const autoSentRef = useRef(false);
+  const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
     (async () => {
       let conv: Conversation | null = null;
       if (state.conversationId) {
@@ -66,9 +67,12 @@ export default function Chat() {
       if (!conv) {
         conv = { id: generateId(), createdAt: Date.now(), messages: [] };
       }
-      setConversation(conv);
+      if (!cancelled) setConversation(conv);
     })();
+    return () => { cancelled = true; };
   }, []);
+
+  useEffect(() => () => { abortRef.current?.abort(); }, []);
 
   useEffect(() => {
     if (conversation && state.autoSend && state.prompt && !autoSentRef.current) {
@@ -115,6 +119,8 @@ export default function Chat() {
     scrollToBottom();
 
     try {
+      const ctrl = new AbortController();
+      abortRef.current = ctrl;
       const historyMessages = updatedConv.messages.slice(0, -1);
       const result = await generateImage({
         prompt: data.prompt,
@@ -123,6 +129,7 @@ export default function Chat() {
         action: data.images?.length ? 'edit' : 'auto',
         images: data.images || [],
         history: historyMessages,
+        signal: ctrl.signal,
         onStream: (delta) => {
           setStream({ text: delta.text, thinking: delta.thinking, imageBase64: delta.imageBase64, done: !!delta.done });
           if (isNearBottom()) scrollToBottom();
@@ -138,18 +145,18 @@ export default function Chat() {
       }];
       setConversation(finalConv);
       await convStore.save(finalConv);
-    } catch (err: any) {
-      if (err.name !== 'AbortError') {
-        toast.show(err.message || 'Generation failed', { type: 'error' });
-        const errConv = { ...updatedConv };
-        errConv.messages = [...errConv.messages, {
-          role: 'assistant' as const,
-          error: err.message,
-          timestamp: Date.now(),
-        }];
-        setConversation(errConv);
-        await convStore.save(errConv);
-      }
+    } catch (err: unknown) {
+      if (err instanceof DOMException && err.name === 'AbortError') return;
+      const message = err instanceof Error ? err.message : 'Generation failed';
+      toast.show(message, { type: 'error' });
+      const errConv = { ...updatedConv };
+      errConv.messages = [...errConv.messages, {
+        role: 'assistant' as const,
+        error: message,
+        timestamp: Date.now(),
+      }];
+      setConversation(errConv);
+      await convStore.save(errConv);
     } finally {
       setStream(null);
       setIsGenerating(false);
@@ -179,6 +186,8 @@ export default function Chat() {
       const thinkingLevel = inputRef.current?.getThinking() || 'low';
 
       const historyMessages = conversation.messages.slice(0, msgIdx);
+      const ctrl = new AbortController();
+      abortRef.current = ctrl;
       const result = await generateImage({
         prompt: userMsg.text || '',
         size: retrySize,
@@ -186,6 +195,7 @@ export default function Chat() {
         action: refImages.length ? 'edit' : 'auto',
         images: refImages,
         history: historyMessages,
+        signal: ctrl.signal,
         onStream: (delta) => {
           setStream({ text: delta.text, thinking: delta.thinking, imageBase64: delta.imageBase64, done: !!delta.done });
           if (isNearBottom()) scrollToBottom();
@@ -212,8 +222,10 @@ export default function Chat() {
       }
       setConversation(updatedConv);
       await convStore.save(updatedConv);
-    } catch (err: any) {
-      toast.show(err.message || 'Retry failed', { type: 'error' });
+    } catch (err: unknown) {
+      if (err instanceof DOMException && err.name === 'AbortError') return;
+      const message = err instanceof Error ? err.message : 'Retry failed';
+      toast.show(message, { type: 'error' });
     } finally {
       setRetryingIdx(-1);
       setStream(null);
@@ -227,8 +239,9 @@ export default function Chat() {
     const updatedConv = { ...conversation };
     updatedConv.messages = [...updatedConv.messages];
     const msg = { ...updatedConv.messages[msgIdx] };
+    const variants = getVariants(msg);
     const current = msg.activeVariant || 0;
-    msg.activeVariant = current + direction;
+    msg.activeVariant = Math.max(0, Math.min(variants.length - 1, current + direction));
     updatedConv.messages[msgIdx] = msg;
     setConversation(updatedConv);
     await convStore.save(updatedConv);
@@ -240,12 +253,6 @@ export default function Chat() {
       if (conversation.messages[i].role === 'user') return conversation.messages[i];
     }
     return null;
-  }
-
-  function escapeHtml(str: string): string {
-    const div = document.createElement('div');
-    div.textContent = str;
-    return div.innerHTML;
   }
 
   return (
@@ -389,7 +396,7 @@ export default function Chat() {
           ref={inputRef}
           placeholder="Continue creating..."
           onSend={handleSend}
-          initialThinking={(state.thinking as any) || 'low'}
+          initialThinking={(state.thinking as ThinkingLevel | undefined) || 'low'}
         />
       </div>
     </>

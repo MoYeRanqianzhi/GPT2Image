@@ -297,7 +297,7 @@ export async function generateImage({
 
       if (!eventData || eventData === '[DONE]') continue;
 
-      let parsed: any;
+      let parsed: Record<string, unknown>;
       try {
         parsed = JSON.parse(eventData);
       } catch {
@@ -305,21 +305,23 @@ export async function generateImage({
       }
 
       if (eventType === 'response.output_text.delta') {
-        accText = (accText || '') + (parsed.delta || '');
+        accText = (accText || '') + (String(parsed.delta ?? ''));
         emit();
       } else if (eventType === 'response.reasoning_summary_text.delta') {
-        accThinking = (accThinking || '') + (parsed.delta || '');
+        accThinking = (accThinking || '') + (String(parsed.delta ?? ''));
         emit();
       } else if (eventType === 'response.output_item.done') {
-        if (parsed.item?.type === 'image_generation_call' && parsed.item?.result) {
-          accImage = parsed.item.result;
+        const item = parsed.item as Record<string, unknown> | undefined;
+        if (item?.type === 'image_generation_call' && typeof item.result === 'string') {
+          accImage = item.result;
           emit();
         }
       } else if (eventType === 'response.completed') {
-        finalData = parsed;
+        finalData = parsed as { response?: { output?: ResponseOutputItem[] }; output?: ResponseOutputItem[] };
         emit({ done: true });
       } else if (eventType === 'response.failed') {
-        const failMsg = parsed.error?.message || 'Generation failed';
+        const errObj = parsed.error as Record<string, unknown> | undefined;
+        const failMsg = String(errObj?.message ?? 'Generation failed');
         if (failMsg.includes('rate') || failMsg.includes('limit')) {
           throw new Error('Rate limit exceeded — please wait a moment and try again.');
         }

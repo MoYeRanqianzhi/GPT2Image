@@ -74,8 +74,8 @@ export const InputBar = forwardRef<InputBarHandle, InputBarProps>(function Input
 
   function getSize() {
     if (selectedSize === 'custom') {
-      const w = parseInt(customW) || 1024;
-      const h = parseInt(customH) || 1024;
+      const w = Math.min(4096, Math.max(256, parseInt(customW) || 1024));
+      const h = Math.min(4096, Math.max(256, parseInt(customH) || 1024));
       return `${w}x${h}`;
     }
     return selectedSize;

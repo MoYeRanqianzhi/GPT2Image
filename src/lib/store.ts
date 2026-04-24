@@ -157,8 +157,8 @@ export const useConversationStore = create<ConversationState>((set, get) => ({
         }
 
         const variants = msg.variants
-          || (msg.variants === undefined && (msg as any).imageBase64
-            ? [{ imageBase64: (msg as any).imageBase64, size: (msg as any).size, timestamp: msg.timestamp }]
+          || (msg.variants === undefined && msg.imageBase64
+            ? [{ imageBase64: msg.imageBase64, size: msg.size || 'auto', timestamp: msg.timestamp }]
             : []);
 
         for (const v of variants) {

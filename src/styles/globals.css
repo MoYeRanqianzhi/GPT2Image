@@ -592,6 +592,11 @@ h1, h2 {
   background: transparent;
 }
 
+.size-dropdown-label {
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
 .size-dropdown-arrow {
   display: flex;
   align-items: center;
