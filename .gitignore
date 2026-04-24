@@ -1,10 +1,7 @@
-data/
-screenshots/
-.superpowers/
-.playwright-mcp/
 node_modules/
 dist/
-*.stackdump
-*.png
-src-old/
 tsconfig.tsbuildinfo
+*.stackdump
+.superpowers/
+.playwright-mcp/
+screenshots/
