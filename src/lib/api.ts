@@ -7,6 +7,51 @@ import type {
   Message,
 } from '../types';
 
+const REQUEST_TIMEOUT_MS = 120_000;
+
+function classifyFetchError(err: unknown): Error {
+  if (err instanceof DOMException && err.name === 'AbortError') {
+    return err as Error;
+  }
+  if (err instanceof DOMException && err.name === 'TimeoutError') {
+    return new Error('Request timed out — the server may be overloaded. Try again later.');
+  }
+  const msg = err instanceof Error ? err.message : String(err);
+  if (msg === 'Failed to fetch' || msg.includes('NetworkError') || msg.includes('ERR_')) {
+    return new Error(
+      'Cannot reach the API server. Check your network connection and verify the API Base URL in Settings.'
+    );
+  }
+  if (msg.includes('CORS') || msg.includes('blocked')) {
+    return new Error(
+      'Request blocked by CORS policy. The API server may not allow browser requests from this origin.'
+    );
+  }
+  return new Error(`Network error: ${msg}`);
+}
+
+function classifyHttpError(status: number, detail: string): Error {
+  switch (status) {
+    case 401:
+      return new Error('Authentication failed — check your API Key in Settings.');
+    case 403:
+      return new Error('Access denied — your API key may lack the required permissions.');
+    case 404:
+      return new Error('API endpoint not found — verify your API Base URL in Settings.');
+    case 429:
+      return new Error('Rate limit exceeded — please wait a moment and try again.');
+    case 500:
+    case 502:
+    case 503:
+    case 504:
+      return new Error(
+        `API server error (${status}) — this is a temporary upstream issue, not a bug. Try again later.`
+      );
+    default:
+      return new Error(`API error ${status}: ${detail}`);
+  }
+}
+
 let cachedSystemPromptTemplate: string | null = null;
 
 function injectPromptVariables(template: string): string {
@@ -173,15 +218,25 @@ export async function generateImage({
     payload.stream = true;
   }
 
-  const response = await fetch(`${config.baseURL.replace(/\/+$/, '')}/responses`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${config.apiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(payload),
-    ...(signal && { signal }),
-  });
+  let response: Response;
+  try {
+    const timeoutSignal = AbortSignal.timeout(REQUEST_TIMEOUT_MS);
+    const combinedSignal = signal
+      ? AbortSignal.any([signal, timeoutSignal])
+      : timeoutSignal;
+
+    response = await fetch(`${config.baseURL.replace(/\/+$/, '')}/responses`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${config.apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+      signal: combinedSignal,
+    });
+  } catch (err) {
+    throw classifyFetchError(err);
+  }
 
   if (!response.ok) {
     const text = await response.text();
@@ -191,14 +246,14 @@ export async function generateImage({
     } catch {
       // keep raw text
     }
-    throw new Error(`API error ${response.status}: ${detail}`);
+    throw classifyHttpError(response.status, detail);
   }
 
   if (!onStream) {
     const data = await response.json();
     const result = parseResponseOutput(data.output);
     if (!result.text && !result.imageBase64) {
-      throw new Error('No usable content in API response');
+      throw new Error('The API returned an empty response — the model may not support this request, or content was filtered.');
     }
     return { ...result, raw: data };
   }
@@ -264,7 +319,14 @@ export async function generateImage({
         finalData = parsed;
         emit({ done: true });
       } else if (eventType === 'response.failed') {
-        throw new Error(parsed.error?.message || 'Generation failed');
+        const failMsg = parsed.error?.message || 'Generation failed';
+        if (failMsg.includes('rate') || failMsg.includes('limit')) {
+          throw new Error('Rate limit exceeded — please wait a moment and try again.');
+        }
+        if (failMsg.includes('content_policy') || failMsg.includes('filter')) {
+          throw new Error('Content was filtered by the API safety policy. Try rephrasing your prompt.');
+        }
+        throw new Error(`Generation failed: ${failMsg}`);
       }
     }
   }
@@ -276,7 +338,7 @@ export async function generateImage({
   }
 
   if (!accText && !accImage) {
-    throw new Error('No usable content in stream');
+    throw new Error('The API stream ended without content — the model may not support this request, or content was filtered.');
   }
 
   return { text: accText, imageBase64: accImage, thinking: accThinking, raw: null };
