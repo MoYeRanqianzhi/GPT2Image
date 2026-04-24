@@ -5,3 +5,7 @@ tsconfig.tsbuildinfo
 .superpowers/
 .playwright-mcp/
 screenshots/
+docs/
+CLAUDE.md
+AGENTS.md
+DESIGN.md
