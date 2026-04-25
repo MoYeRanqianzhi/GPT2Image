@@ -1,11 +1,10 @@
 function sanitize(text: string): string {
   return text
-    .toLowerCase()
-    .replace(/[^\w\s-]/g, '')
+    .replace(/[<>:"/\\|?*\x00-\x1f]/g, '')
     .replace(/\s+/g, '-')
     .replace(/-+/g, '-')
     .replace(/^-|-$/g, '')
-    .slice(0, 40);
+    .slice(0, 60);
 }
 
 function formatTimestamp(ts: number): string {
