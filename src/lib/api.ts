@@ -347,7 +347,12 @@ export async function generateImage({
   if (finalData) {
     const output = finalData.response?.output || finalData.output;
     const result = parseResponseOutput(output);
-    return { ...result, raw: finalData };
+    return {
+      text: result.text ?? accText,
+      imageBase64: result.imageBase64 ?? accImage,
+      thinking: result.thinking ?? accThinking,
+      raw: finalData,
+    };
   }
 
   if (!accText && !accImage) {

@@ -360,7 +360,7 @@ export default function Chat() {
           return null;
         })}
 
-        {stream && !stream.done && (
+        {stream && (
           <div className="message message-ai">
             <div className="bubble-ai">
               {config?.showThinking && stream.thinking && (
