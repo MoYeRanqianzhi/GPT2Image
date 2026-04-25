@@ -61,6 +61,8 @@ export default function Gallery() {
               key={i}
               imageBase64={img.imageBase64}
               size={img.size}
+              prompt={img.prompt}
+              timestamp={img.timestamp}
               onEdit={(src) => {
                 navigate('/chat', { state: { images: [src] } });
                 showToast('Reference image attached');

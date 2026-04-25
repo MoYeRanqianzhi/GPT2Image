@@ -8,6 +8,7 @@ import { useToast } from '../components/Toast';
 import { MarkdownRenderer } from '../lib/markdown';
 import { generateImage } from '../lib/api';
 import { useConversationStore, generateId } from '../lib/store';
+import { buildImageFilename } from '../lib/filename';
 import { ChevronDown, Download, Save, Maximize2, RefreshCw } from 'lucide-react';
 
 const TIER_PRESETS = [
@@ -405,7 +406,7 @@ export default function Waterfall() {
                             e.stopPropagation();
                             const a = document.createElement('a');
                             a.href = `data:image/png;base64,${card.imageBase64}`;
-                            a.download = `gpt2image-${Date.now()}.png`;
+                            a.download = buildImageFilename(currentPrompt);
                             a.click();
                           }}
                         >

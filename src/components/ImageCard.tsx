@@ -1,8 +1,11 @@
 import { Download, Pencil, Maximize2 } from 'lucide-react';
+import { buildImageFilename } from '../lib/filename';
 
 interface ImageCardProps {
   imageBase64: string;
   size?: string;
+  prompt?: string;
+  timestamp?: number;
   onEdit?: (src: string) => void;
   onFullscreen?: (src: string) => void;
 }
@@ -10,6 +13,8 @@ interface ImageCardProps {
 export function ImageCard({
   imageBase64,
   size = '1024x1024',
+  prompt,
+  timestamp,
   onEdit,
   onFullscreen,
 }: ImageCardProps) {
@@ -19,7 +24,7 @@ export function ImageCard({
     e.stopPropagation();
     const a = document.createElement('a');
     a.href = src;
-    a.download = `gpt2image-${Date.now()}.png`;
+    a.download = buildImageFilename(prompt, timestamp);
     a.click();
   }
 

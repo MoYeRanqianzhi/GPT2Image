@@ -340,6 +340,8 @@ export default function Chat() {
                       <ImageCard
                         imageBase64={variant.imageBase64}
                         size={variant.size}
+                        prompt={findPrecedingUserMsg(i)?.text}
+                        timestamp={variant.timestamp}
                         onEdit={() => {
                           const src = `data:image/png;base64,${variant.imageBase64}`;
                           inputRef.current?.setImages([src]);
