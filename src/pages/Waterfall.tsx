@@ -291,6 +291,7 @@ export default function Waterfall() {
 
   return (
     <>
+      <Header activeTab="waterfall" />
       {warningPopup && (
         <WarningPopup
           type={warningPopup.type}
