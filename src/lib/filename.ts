@@ -18,7 +18,7 @@ export function buildImageFilename(prompt?: string, timestamp?: number): string 
   const ts = formatTimestamp(timestamp || Date.now());
   const slug = prompt ? sanitize(prompt) : '';
   if (slug) {
-    return `gpt2image_${slug}_${ts}.png`;
+    return `gpt2image_${ts}_${slug}.png`;
   }
   return `gpt2image_${ts}.png`;
 }
