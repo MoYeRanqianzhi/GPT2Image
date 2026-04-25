@@ -1433,6 +1433,7 @@ h1, h2 {
 .waterfall-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
+  align-items: start;
   gap: 15px;
   padding: 20px 24px;
 }
