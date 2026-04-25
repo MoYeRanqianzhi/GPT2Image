@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Header } from '../components/Header';
 import { InputBar } from '../components/InputBar';
 import type { InputBarHandle, SendData } from '../components/InputBar';
@@ -41,14 +40,9 @@ interface WaterfallCard {
 
 export default function Waterfall() {
   const config = useConfigStore((s) => s.config);
-  const navigate = useNavigate();
   const { open: openLightbox } = useLightbox();
   const toast = useToast();
   const convStore = useConversationStore();
-
-  useEffect(() => {
-    if (!config) navigate('/settings');
-  }, [config, navigate]);
 
   const [currentTier, setCurrentTier] = useState(5);
   const [currentPrompt, setCurrentPrompt] = useState('');

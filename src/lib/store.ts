@@ -62,15 +62,17 @@ export function generateId(): string {
 
 interface ConfigState {
   config: Config | null;
+  loaded: boolean;
   load: () => void;
   save: (config: Config) => void;
 }
 
 export const useConfigStore = create<ConfigState>((set) => ({
   config: null,
+  loaded: false,
   load: () => {
     const raw = localStorage.getItem(CONFIG_KEY);
-    set({ config: raw ? JSON.parse(raw) : null });
+    set({ config: raw ? JSON.parse(raw) : null, loaded: true });
   },
   save: (config: Config) => {
     localStorage.setItem(CONFIG_KEY, JSON.stringify(config));

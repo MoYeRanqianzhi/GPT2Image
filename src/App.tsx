@@ -13,6 +13,8 @@ import Settings from './pages/Settings';
 
 function RequireConfig({ children }: { children: React.ReactNode }) {
   const config = useConfigStore((s) => s.config);
+  const loaded = useConfigStore((s) => s.loaded);
+  if (!loaded) return null;
   if (!config) return <Navigate to="/settings" replace />;
   return <>{children}</>;
 }
