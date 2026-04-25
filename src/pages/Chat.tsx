@@ -214,9 +214,11 @@ export default function Chat() {
           timestamp: Date.now(),
         };
       } else {
-        const variants = updatedMsg.variants ? [...updatedMsg.variants] : [];
+        const variants = [...getVariants(updatedMsg)];
         variants.push({ text: result.text || undefined, imageBase64: result.imageBase64 || undefined, thinking: result.thinking || undefined, size: retrySize, timestamp: Date.now() });
         updatedMsg.variants = variants;
+        updatedMsg.imageBase64 = undefined;
+        updatedMsg.size = undefined;
         updatedMsg.activeVariant = variants.length - 1;
         updatedConv.messages[msgIdx] = updatedMsg;
       }
@@ -278,11 +280,33 @@ export default function Chat() {
           }
 
           if (msg.role === 'assistant') {
-            if (retryingIdx >= 0 && i === retryingIdx) {
+            if (retryingIdx >= 0 && i === retryingIdx && stream) {
               return (
                 <div key={i} className="message message-ai">
-                  <div className="bubble-ai" style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--text-tertiary)', fontSize: 16 }}>
-                    <span className="loading-dot" /> Generating...
+                  <div className="bubble-ai">
+                    {config?.showThinking && stream.thinking && (
+                      <details className="thinking-block" open>
+                        <summary className="thinking-summary">Thinking</summary>
+                        <div className="thinking-content">{stream.thinking}</div>
+                      </details>
+                    )}
+                    {stream.text && (
+                      <div className="bubble-ai-text markdown-body">
+                        <MarkdownRenderer content={stream.text} />
+                      </div>
+                    )}
+                    {stream.imageBase64 && (
+                      <img
+                        src={`data:image/png;base64,${stream.imageBase64}`}
+                        alt=""
+                        style={{ maxWidth: 280, borderRadius: 'var(--radius-lg)', display: 'block', marginTop: 10 }}
+                      />
+                    )}
+                    {!stream.text && !stream.imageBase64 && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--text-tertiary)', fontSize: 16 }}>
+                        <span className="loading-dot" /> Generating...
+                      </div>
+                    )}
                   </div>
                 </div>
               );
@@ -298,7 +322,7 @@ export default function Chat() {
                 ) : variant ? (
                   <div className="bubble-ai">
                     {config?.showThinking && variant.thinking && (
-                      <details className="thinking-block" open>
+                      <details className="thinking-block">
                         <summary className="thinking-summary">Thinking</summary>
                         <div className="thinking-content">{variant.thinking}</div>
                       </details>
@@ -313,6 +337,8 @@ export default function Chat() {
                         imageBase64={variant.imageBase64}
                         size={variant.size}
                         onEdit={() => {
+                          const src = `data:image/png;base64,${variant.imageBase64}`;
+                          inputRef.current?.setImages([src]);
                           inputRef.current?.textInput?.focus();
                           toast.show('Reference image attached — describe your edits');
                         }}
@@ -360,7 +386,7 @@ export default function Chat() {
           return null;
         })}
 
-        {stream && (
+        {stream && retryingIdx < 0 && (
           <div className="message message-ai">
             <div className="bubble-ai">
               {config?.showThinking && stream.thinking && (

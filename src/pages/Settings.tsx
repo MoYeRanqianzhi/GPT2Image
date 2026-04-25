@@ -58,7 +58,7 @@ function ConnectView() {
         model: m,
         showThinking: false,
         thinkingLevel: 'low',
-        darkMode: false,
+        darkMode: document.documentElement.getAttribute('data-theme') === 'dark',
       });
       showToast('Connected successfully');
       navigate('/create');
@@ -69,7 +69,7 @@ function ConnectView() {
         model: m,
         showThinking: false,
         thinkingLevel: 'low',
-        darkMode: false,
+        darkMode: document.documentElement.getAttribute('data-theme') === 'dark',
       });
       showToast('Saved (could not verify connection)', { type: 'error' });
       navigate('/create');

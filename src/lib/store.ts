@@ -72,7 +72,22 @@ export const useConfigStore = create<ConfigState>((set) => ({
   loaded: false,
   load: () => {
     const raw = localStorage.getItem(CONFIG_KEY);
-    set({ config: raw ? JSON.parse(raw) : null, loaded: true });
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      set({
+        config: {
+          baseURL: parsed.baseURL ?? '',
+          apiKey: parsed.apiKey ?? '',
+          model: parsed.model ?? 'gpt-5.4',
+          showThinking: parsed.showThinking ?? false,
+          thinkingLevel: parsed.thinkingLevel ?? 'low',
+          darkMode: parsed.darkMode ?? false,
+        },
+        loaded: true,
+      });
+    } else {
+      set({ config: null, loaded: true });
+    }
   },
   save: (config: Config) => {
     localStorage.setItem(CONFIG_KEY, JSON.stringify(config));
@@ -124,6 +139,15 @@ export const useConversationStore = create<ConversationState>((set, get) => ({
       tx.oncomplete = () => resolve();
       tx.onerror = () => reject(tx.error);
     });
+    set((state) => {
+      const idx = state.conversations.findIndex((c) => c.id === conversation.id);
+      if (idx >= 0) {
+        const updated = [...state.conversations];
+        updated[idx] = conversation;
+        return { conversations: updated };
+      }
+      return { conversations: [conversation, ...state.conversations] };
+    });
   },
   remove: async (id: string) => {
     if (!db) return;
@@ -134,6 +158,9 @@ export const useConversationStore = create<ConversationState>((set, get) => ({
       tx.oncomplete = () => resolve();
       tx.onerror = () => reject(tx.error);
     });
+    set((state) => ({
+      conversations: state.conversations.filter((c) => c.id !== id),
+    }));
   },
   getAllImages: async () => {
     if (!db) return [];

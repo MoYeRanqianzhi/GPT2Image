@@ -36,6 +36,7 @@ interface WaterfallCard {
   streamText?: string;
   streamThinking?: string;
   streamImage?: string;
+  saved?: boolean;
 }
 
 export default function Waterfall() {
@@ -58,6 +59,7 @@ export default function Waterfall() {
     tier: number;
     count: number;
   } | null>(null);
+  const warningBlockRef = useRef(false);
 
   const activeRequestsRef = useRef(0);
   const sessionCountRef = useRef(0);
@@ -93,7 +95,7 @@ export default function Waterfall() {
 
   const triggerBatch = useCallback(async () => {
     const prompt = currentPromptRef.current;
-    if (!prompt) return;
+    if (!prompt || warningBlockRef.current) return;
 
     const tier = currentTierRef.current;
     const maxConcurrent = tier * 3;
@@ -105,7 +107,9 @@ export default function Waterfall() {
     for (const t of thresholds) {
       if (sessionCountRef.current < t && nextCount >= t && !milestoneShownRef.current.has(t)) {
         milestoneShownRef.current.add(t);
+        warningBlockRef.current = true;
         setWarningPopup({ type: 'milestone', tier, count: nextCount });
+        return;
       }
     }
     sessionCountRef.current += batchSize;
@@ -293,6 +297,10 @@ export default function Waterfall() {
           count={warningPopup.count}
           onClose={() => {
             setWarningPopup(null);
+            if (warningBlockRef.current) {
+              warningBlockRef.current = false;
+              triggerBatch();
+            }
           }}
         />
       )}
@@ -354,7 +362,12 @@ export default function Waterfall() {
                 <div
                   key={card.id}
                   className={`waterfall-card${card.state === 'loading' ? ' loading' : ''}${card.state === 'text' ? ' text-card' : ''}${card.state === 'error' ? ' error-card' : ''}`}
-                  style={card.aspectRatio ? { aspectRatio: card.aspectRatio } : undefined}
+                  style={card.aspectRatio ? { aspectRatio: card.aspectRatio, cursor: card.state === 'image' ? 'pointer' : undefined } : { cursor: card.state === 'image' ? 'pointer' : undefined }}
+                  onClick={() => {
+                    if (card.state === 'image' && card.imageBase64) {
+                      openLightbox(`data:image/png;base64,${card.imageBase64}`, { prompt: currentPrompt });
+                    }
+                  }}
                 >
                   {card.state === 'loading' && null}
 
@@ -370,9 +383,11 @@ export default function Waterfall() {
                         <button
                           className="waterfall-card-btn"
                           title="Save to Gallery"
+                          style={card.saved ? { opacity: 0.5, pointerEvents: 'none' } : undefined}
                           onClick={(e) => {
                             e.stopPropagation();
                             saveToGallery(card.imageBase64!, currentPrompt);
+                            setCards((prev) => prev.map((c) => c.id === card.id ? { ...c, saved: true } : c));
                           }}
                         >
                           <Save size={14} />

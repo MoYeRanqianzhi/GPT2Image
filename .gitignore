@@ -2,6 +2,7 @@ node_modules/
 dist/
 tsconfig.tsbuildinfo
 *.stackdump
+.env*
 .superpowers/
 .playwright-mcp/
 screenshots/
