@@ -44,7 +44,6 @@ export default function History() {
   async function handleDelete(e: React.MouseEvent, conv: Conversation) {
     e.stopPropagation();
     await remove(conv.id);
-    await loadAll();
   }
 
   const items = conversations.filter((c) => c.messages.some((m) => m.role === 'user'));

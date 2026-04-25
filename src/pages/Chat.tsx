@@ -75,7 +75,11 @@ export default function Chat() {
   useEffect(() => () => { abortRef.current?.abort(); }, []);
 
   useEffect(() => {
-    if (conversation && state.autoSend && state.prompt && !autoSentRef.current) {
+    if (!conversation) return;
+    if (state.images?.length && !autoSentRef.current) {
+      inputRef.current?.setImages(state.images);
+    }
+    if (state.autoSend && state.prompt && !autoSentRef.current) {
       autoSentRef.current = true;
       handleSend({
         prompt: state.prompt,
@@ -356,7 +360,7 @@ export default function Chat() {
                     <div className="variant-nav">
                       <button
                         className="variant-nav-btn"
-                        disabled={(msg.activeVariant || 0) === 0}
+                        disabled={isGenerating || (msg.activeVariant || 0) === 0}
                         onClick={() => handleVariantChange(i, -1)}
                       >
                         <ChevronLeft size={14} />
@@ -364,7 +368,7 @@ export default function Chat() {
                       <span>{(msg.activeVariant || 0) + 1} / {variants.length}</span>
                       <button
                         className="variant-nav-btn"
-                        disabled={(msg.activeVariant || 0) >= variants.length - 1}
+                        disabled={isGenerating || (msg.activeVariant || 0) >= variants.length - 1}
                         onClick={() => handleVariantChange(i, 1)}
                       >
                         <ChevronRight size={14} />
@@ -374,6 +378,7 @@ export default function Chat() {
                   <button
                     className="message-retry"
                     title={msg.error ? 'Retry generation' : 'Generate another variant'}
+                    disabled={isGenerating}
                     onClick={() => handleRetry(i)}
                   >
                     <RefreshCw size={16} />

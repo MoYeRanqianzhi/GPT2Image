@@ -32,13 +32,11 @@ function animateThemeFromPoint(dark: boolean, x: number, y: number) {
     overlay.style.clipPath = `circle(0px at ${x}px ${y}px)`;
   });
 
-  overlay.addEventListener(
-    'transitionend',
-    () => {
-      overlay.remove();
-    },
-    { once: true }
-  );
+  const cleanup = () => {
+    if (overlay.parentNode) overlay.remove();
+  };
+  overlay.addEventListener('transitionend', cleanup, { once: true });
+  setTimeout(cleanup, 1000);
 }
 
 export const useThemeStore = create<ThemeState>((set, get) => ({

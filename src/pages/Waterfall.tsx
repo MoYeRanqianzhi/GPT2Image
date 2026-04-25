@@ -73,6 +73,13 @@ export default function Waterfall() {
   const currentThinkingRef = useRef('');
   const currentTierRef = useRef(5);
 
+  useEffect(() => {
+    if (!tierOpen) return;
+    const handleClick = () => setTierOpen(false);
+    document.addEventListener('click', handleClick);
+    return () => document.removeEventListener('click', handleClick);
+  }, [tierOpen]);
+
   useEffect(() => { currentPromptRef.current = currentPrompt; }, [currentPrompt]);
   useEffect(() => { currentSizeRef.current = currentSize; }, [currentSize]);
   useEffect(() => { currentThinkingRef.current = currentThinking; }, [currentThinking]);
@@ -107,6 +114,7 @@ export default function Waterfall() {
     for (const t of thresholds) {
       if (sessionCountRef.current < t && nextCount >= t && !milestoneShownRef.current.has(t)) {
         milestoneShownRef.current.add(t);
+        sessionCountRef.current = nextCount;
         warningBlockRef.current = true;
         setWarningPopup({ type: 'milestone', tier, count: nextCount });
         return;
@@ -377,7 +385,6 @@ export default function Waterfall() {
                         src={`data:image/png;base64,${card.imageBase64}`}
                         alt={currentPrompt}
                         loading="lazy"
-                        onClick={() => openLightbox(`data:image/png;base64,${card.imageBase64}`, { prompt: currentPrompt })}
                       />
                       <div className="waterfall-card-overlay">
                         <button
