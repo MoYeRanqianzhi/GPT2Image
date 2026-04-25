@@ -7,7 +7,7 @@ import { useLightbox } from '../components/Lightbox';
 import { useToast } from '../components/Toast';
 import { MarkdownRenderer } from '../lib/markdown';
 import { generateImage } from '../lib/api';
-import { useConfigStore, useConversationStore, generateId } from '../lib/store';
+import { useConversationStore, generateId } from '../lib/store';
 import { ChevronDown, Download, Save, Maximize2, RefreshCw } from 'lucide-react';
 
 const TIER_PRESETS = [
@@ -40,7 +40,6 @@ interface WaterfallCard {
 }
 
 export default function Waterfall() {
-  const config = useConfigStore((s) => s.config);
   const { open: openLightbox } = useLightbox();
   const toast = useToast();
   const convStore = useConversationStore();
