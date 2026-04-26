@@ -59,6 +59,7 @@ function ConnectView() {
         showThinking: false,
         thinkingLevel: 'low',
         darkMode: document.documentElement.getAttribute('data-theme') === 'dark',
+        useSystemPrompt: true,
       });
       showToast('Connected successfully');
       navigate('/create');
@@ -70,6 +71,7 @@ function ConnectView() {
         showThinking: false,
         thinkingLevel: 'low',
         darkMode: document.documentElement.getAttribute('data-theme') === 'dark',
+        useSystemPrompt: true,
       });
       showToast('Saved (could not verify connection)', { type: 'error' });
       navigate('/create');
@@ -169,6 +171,7 @@ function FullSettings({ config }: { config: Config }) {
   const [apiKey, setApiKey] = useState(config.apiKey || '');
   const [model, setModel] = useState(config.model || 'gpt-5.4');
   const [showThinking, setShowThinking] = useState(!!config.showThinking);
+  const [useSystemPrompt, setUseSystemPrompt] = useState(config.useSystemPrompt !== false);
 
   function handleSave() {
     const b = baseURL.trim();
@@ -187,6 +190,7 @@ function FullSettings({ config }: { config: Config }) {
       showThinking,
       thinkingLevel: config.thinkingLevel || 'low',
       darkMode: config.darkMode ?? false,
+      useSystemPrompt,
     });
     showToast('Settings saved');
   }
@@ -256,6 +260,22 @@ function FullSettings({ config }: { config: Config }) {
                 type="checkbox"
                 checked={showThinking}
                 onChange={(e) => setShowThinking(e.target.checked)}
+              />
+              <span className="toggle-slider" />
+            </label>
+          </div>
+          <div className="settings-toggle-row">
+            <div className="settings-toggle-info">
+              <span className="settings-toggle-name">System prompt</span>
+              <span className="settings-toggle-desc">
+                Inject full personality and style instructions. When off, only model metadata is sent.
+              </span>
+            </div>
+            <label className="toggle-switch">
+              <input
+                type="checkbox"
+                checked={useSystemPrompt}
+                onChange={(e) => setUseSystemPrompt(e.target.checked)}
               />
               <span className="toggle-slider" />
             </label>

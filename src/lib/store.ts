@@ -82,6 +82,7 @@ export const useConfigStore = create<ConfigState>((set) => ({
           showThinking: parsed.showThinking ?? false,
           thinkingLevel: parsed.thinkingLevel ?? 'low',
           darkMode: parsed.darkMode ?? false,
+          useSystemPrompt: parsed.useSystemPrompt ?? true,
         },
         loaded: true,
       });

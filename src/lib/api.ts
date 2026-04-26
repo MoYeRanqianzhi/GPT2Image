@@ -71,7 +71,10 @@ function injectPromptVariables(template: string): string {
   return template.replace(/\{\{(\w+)\}\}/g, (_, key: string) => vars[key] ?? `{{${key}}}`);
 }
 
-async function getSystemPrompt(): Promise<string> {
+const MINIMAL_PROMPT = 'You are GPT-2-IMAGE (gpt-2-image). Platform: app.gpt2image.org. Current date: {{CURRENT_DATE}}.';
+
+async function getSystemPrompt(full: boolean): Promise<string> {
+  if (!full) return injectPromptVariables(MINIMAL_PROMPT);
   if (cachedSystemPromptTemplate === null) {
     try {
       const resp = await fetch('assets/system-prompt.md');
@@ -207,7 +210,7 @@ export async function generateImage({
     tool.size = size;
   }
 
-  const instructions = await getSystemPrompt();
+  const instructions = await getSystemPrompt(config.useSystemPrompt !== false);
 
   const payload: RequestPayload = {
     model: config.model || 'gpt-5.4',

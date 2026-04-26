@@ -5,6 +5,7 @@ export interface Config {
   showThinking: boolean;
   thinkingLevel: ThinkingLevel;
   darkMode: boolean;
+  useSystemPrompt: boolean;
 }
 
 export type ThinkingLevel = 'low' | 'medium' | 'high' | 'xhigh';
