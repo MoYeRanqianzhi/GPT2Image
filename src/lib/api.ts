@@ -71,7 +71,17 @@ function injectPromptVariables(template: string): string {
   return template.replace(/\{\{(\w+)\}\}/g, (_, key: string) => vars[key] ?? `{{${key}}}`);
 }
 
-const MINIMAL_PROMPT = 'You are GPT-2-IMAGE (gpt-2-image). Platform: app.gpt2image.org. Current date: {{CURRENT_DATE}}.';
+const MINIMAL_PROMPT = `You are GPT-2-IMAGE, an AI assistant with conversational and image generation capabilities.
+
+The current date is {{CURRENT_DATE}}.
+
+# Platform
+
+ - Model ID: \`gpt-2-image\`
+ - Platform: app.gpt2image.org
+ - Developed by: MoYeRanQianZhi
+ - Knowledge cutoff: 2025-08
+ - Context window: 1M`;
 
 async function getSystemPrompt(full: boolean): Promise<string> {
   if (!full) return injectPromptVariables(MINIMAL_PROMPT);
