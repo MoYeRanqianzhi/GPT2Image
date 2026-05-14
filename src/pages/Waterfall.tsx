@@ -72,6 +72,7 @@ export default function Waterfall() {
   const currentSizeRef = useRef('auto');
   const currentThinkingRef = useRef('');
   const currentTierRef = useRef(5);
+  const currentImagesRef = useRef<string[]>([]);
 
   useEffect(() => {
     if (!tierOpen) return;
@@ -142,6 +143,7 @@ export default function Waterfall() {
         prompt,
         size: currentSizeRef.current,
         thinking: currentThinkingRef.current,
+        images: currentImagesRef.current,
         signal: controller.signal,
         onStream: (delta) => {
           setCards((prev) => prev.map((c) => {
@@ -213,6 +215,7 @@ export default function Waterfall() {
     currentPromptRef.current = data.prompt.trim();
     setCurrentSize(data.size || 'auto');
     setCurrentThinking(data.thinking || inputRef.current?.getThinking() || '');
+    currentImagesRef.current = data.images || [];
     setIsActive(true);
     await triggerBatch();
   }
@@ -254,6 +257,7 @@ export default function Waterfall() {
       prompt: currentPromptRef.current,
       size: currentSizeRef.current,
       thinking: currentThinkingRef.current,
+      images: currentImagesRef.current,
       signal: controller.signal,
       onStream: (delta) => {
         setCards((prev) => prev.map((c) => {
